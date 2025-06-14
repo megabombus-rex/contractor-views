@@ -81,7 +81,7 @@ namespace ContractorsAPI.Controllers
         public async Task<IActionResult> AddContractorAsync([FromBody] AddUpdateContractorDTO dto, CancellationToken ct)
         {
 
-            var result = await _contractorService.CreateNewContractor(dto);
+            var result = await _contractorService.CreateNewContractorAsync(dto, ct);
 
             if (result.IsSuccess)
             {

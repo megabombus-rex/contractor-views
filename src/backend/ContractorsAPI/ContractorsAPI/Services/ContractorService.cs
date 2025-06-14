@@ -4,8 +4,6 @@ using ContractorsAPI.Model.Common;
 using ContractorsAPI.Model.Contractor;
 using ContractorsAPI.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualBasic.FileIO;
-using System.Linq;
 
 namespace ContractorsAPI.Services
 {
@@ -58,7 +56,6 @@ namespace ContractorsAPI.Services
                 IQueryable<Contractor> contractors = _dbContext.Contractors
                     .Where(c => c.UserId == userId);
 
-
                 if (!string.IsNullOrEmpty(query))
                 {
                     query = query.ToUpper();
@@ -96,17 +93,18 @@ namespace ContractorsAPI.Services
         }
 
 
-        public async Task<Result<int>> CreateNewContractor(AddUpdateContractorDTO contractorDTO)
+        public async Task<Result<int>> CreateNewContractorAsync(AddUpdateContractorDTO contractorDTO, CancellationToken ct)
         {
-            if (!_dbContext.Users.Any(u => u.Id == contractorDTO.UserId))
+            // all of validation could be moved to fluent validators
+            if (string.IsNullOrEmpty(contractorDTO.Name))
             {
-                return Result<int>.Failure($"No user with given id {contractorDTO.UserId} found.", StatusCodes.Status404NotFound);
+                return Result<int>.Failure("The contractor name cannot be empty.", StatusCodes.Status422UnprocessableEntity);
             }
 
             var invalidProperties = contractorDTO.AdditionalData
-                .GroupBy(ad => ad.FieldName)
-                .Where(g => 
-                    g.Count() > 1 
+                .GroupBy(ad => ad.FieldName.ToLower())
+                .Where(g =>
+                    g.Count() > 1
                     || g.Any(ad => !CheckIfFieldIsCorrect(ad.FieldType, ad.FieldValue)))
                 .Select(g => g.Key)
                 .ToList();
@@ -117,7 +115,12 @@ namespace ContractorsAPI.Services
                 return Result<int>.Failure(message, StatusCodes.Status422UnprocessableEntity);
             }
 
-            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            if (!await _dbContext.Users.AnyAsync(u => u.Id == contractorDTO.UserId, ct))
+            {
+                return Result<int>.Failure($"No user with given id was found.", StatusCodes.Status404NotFound);
+            }
+
+            using var transaction = await _dbContext.Database.BeginTransactionAsync(ct);
 
             try
             {
@@ -129,7 +132,7 @@ namespace ContractorsAPI.Services
                 };
 
                 _dbContext.Contractors.Add(contractor);
-                await _dbContext.SaveChangesAsync();
+                await _dbContext.SaveChangesAsync(ct);
 
                 var additionalData = contractorDTO.AdditionalData
                     .Select(ad => new ContractorAdditionalData()
@@ -142,19 +145,109 @@ namespace ContractorsAPI.Services
 
                 _dbContext.ContractorsAdditionalData.AddRange(additionalData);
 
-                await _dbContext.SaveChangesAsync();
-                await transaction.CommitAsync();
+                await _dbContext.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
 
                 return Result<int>.Success(contractor.Id);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                await transaction.RollbackAsync(ct);
                 _logger.LogError($"Exception thrown while adding a contractor. Exception: {ex.Message}.", ex);
                 return Result<int>.Failure("The encountered issue while adding a contractor.", StatusCodes.Status500InternalServerError);
             }            
         }
 
+        public async Task<Result> UpdateContractorAsync(int userId, int contractorId, AddUpdateContractorDTO contractorDTO, CancellationToken ct)
+        {
+            var invalidProperties = contractorDTO.AdditionalData
+                .GroupBy(ad => ad.FieldName.ToLower())
+                .Where(g =>
+                    g.Count() > 1
+                    || g.Any(ad => !CheckIfFieldIsCorrect(ad.FieldType, ad.FieldValue)))
+                .Select(g => g.Key)
+                .ToList();
+
+            if (invalidProperties.Count > 0)
+            {
+                var message = $"Invalid fields: {string.Join(',', invalidProperties)}. Check for duplicates and if the values are correct.";
+                return Result.Failure(message, StatusCodes.Status422UnprocessableEntity);
+            }
+
+            if (!await _dbContext.Users.AnyAsync(u => u.Id == contractorDTO.UserId, ct))
+            {
+                return Result.Failure($"No user with given id was found.", StatusCodes.Status404NotFound);
+            }
+
+            var contractorToUpdate = await _dbContext.Contractors
+                .Include(c => c.AdditionalData)
+                .FirstOrDefaultAsync(c => c.Id == contractorId && c.UserId == userId, ct);
+
+            if (contractorToUpdate == null)
+            {
+                return Result.Failure("The contractor with given id could not be found for a user with given id.", StatusCodes.Status404NotFound);
+            }
+
+            using var transaction = await _dbContext.Database.BeginTransactionAsync(ct);
+
+            try
+            {
+                contractorToUpdate.Name = contractorDTO.Name;
+                contractorToUpdate.Description = contractorDTO.Description ?? string.Empty;
+
+                var newData = contractorDTO.AdditionalData.Select(ad => new ContractorAdditionalData()
+                {
+                    ContractorId = contractorId,
+                    FieldName = ad.FieldName,
+                    FieldType = ad.FieldType,
+                    FieldValue = ad.FieldValue
+                }).ToList();
+
+                _dbContext.ContractorsAdditionalData.RemoveRange(contractorToUpdate.AdditionalData);
+                _dbContext.ContractorsAdditionalData.AddRange(newData);
+                _dbContext.Contractors.Update(contractorToUpdate);
+
+                await _dbContext.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+                return Result.Success();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(ct);
+                _logger.LogError($"Exception thrown while adding a contractor. Exception: {ex.Message}.", ex);
+                return Result.Failure("The encountered issue while updating a contractor.", StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        public async Task<Result> DeleteContractorAsync(int userId, int contractorId, CancellationToken ct)
+        {
+            var contractorDataToRemove = await _dbContext.Contractors
+                .Include(c => c.AdditionalData)
+                .FirstOrDefaultAsync(c => c.Id == contractorId && c.UserId == userId, ct);
+
+            if (contractorDataToRemove == null)
+            {
+                return Result.Failure($"No contractor with given id was found for the user with given id.", StatusCodes.Status404NotFound);
+            }
+
+            using var transaction = await _dbContext.Database.BeginTransactionAsync(ct);
+
+            try
+            {
+                _dbContext.Contractors.Remove(contractorDataToRemove);
+
+                await _dbContext.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+                return Result.Success();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(ct);
+                _logger.LogError($"Exception thrown while adding a contractor. Exception: {ex.Message}.", ex);
+                return Result.Failure("The encountered issue while updating a contractor.", StatusCodes.Status500InternalServerError);
+            }
+        }
+        
         private bool CheckIfFieldIsCorrect(string type, string value)
         {
             switch (type)

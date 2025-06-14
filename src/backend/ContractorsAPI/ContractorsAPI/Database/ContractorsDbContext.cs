@@ -29,7 +29,8 @@ namespace ContractorsAPI.Database
             modelBuilder.Entity<User>()
                 .HasMany(e => e.Contractors)
                 .WithOne(c => c.User)
-                .HasForeignKey(c => c.UserId);
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // if the contractors were common for multiple users
             //modelBuilder.Entity<User>()
@@ -42,7 +43,8 @@ namespace ContractorsAPI.Database
             modelBuilder.Entity<Contractor>()
                 .HasMany(c => c.AdditionalData)
                 .WithOne(cad => cad.Contractor)
-                .HasForeignKey(cad => cad.ContractorId);
+                .HasForeignKey(cad => cad.ContractorId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Contractor>()
                 .Property(c => c.Description)
