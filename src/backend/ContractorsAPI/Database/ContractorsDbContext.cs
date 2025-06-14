@@ -5,6 +5,16 @@ namespace ContractorsAPI.Database
 {
     public class ContractorsDbContext : DbContext
     {
+        public ContractorsDbContext()
+        {
+            
+        }
+
+        public ContractorsDbContext(DbContextOptions options) : base(options)
+        {
+            
+        }
+
         public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<Contractor> Contractors { get; set; }
         public virtual DbSet<ContractorAdditionalData> ContractorsAdditionalData { get; set; }
@@ -59,12 +69,6 @@ namespace ContractorsAPI.Database
             modelBuilder.Entity<ContractorAdditionalData>()
                 .ToTable(t => t.HasCheckConstraint("CK_ContractorAdditionalData_FieldType", ValidateFieldTypeExpression()));
 
-            modelBuilder.Entity<ContractorAdditionalData>()
-                .Property(e => e.FieldType)
-                .HasConversion(
-                    v => ConvertToRuntimeType(v),
-                    v => ConvertToDatabaseValue(v)
-                );
 
             modelBuilder.Entity<ContractorAdditionalData>()
                 .Property(cad => cad.FieldValue)
@@ -78,33 +82,7 @@ namespace ContractorsAPI.Database
 
         private string ValidateFieldTypeExpression()
         {
-            return "FieldType IN ('string', 'int', 'bool', 'decimal', 'datetime')";
-        }
-
-        private string ConvertToDatabaseValue(Type type)
-        {
-            return type switch
-            {
-                _ when type == typeof(string) => "string",
-                _ when type == typeof(int) => "int",
-                _ when type == typeof(bool) => "bool",
-                _ when type == typeof(decimal) => "decimal",
-                _ when type == typeof(DateTime) => "datetime",
-                _ => throw new ArgumentException($"Unsupported type: {type}")
-            };
-        }
-
-        private Type ConvertToRuntimeType(string dbValue)
-        {
-            return dbValue switch
-            {
-                "string" => typeof(string),
-                "int" => typeof(int),
-                "bool" => typeof(bool),
-                "decimal" => typeof(decimal),
-                "datetime" => typeof(DateTime),
-                _ => throw new ArgumentException($"Unknown database value: {dbValue}")
-            };
+            return "'FieldType' IN ('string', 'int', 'bool', 'decimal', 'datetime')";
         }
     }
 }

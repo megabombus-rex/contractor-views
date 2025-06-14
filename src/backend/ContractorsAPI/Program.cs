@@ -13,6 +13,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+ConfigureServices(builder);
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -22,28 +24,26 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-ConfigureServices(builder.Services);
-
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
 
-void ConfigureServices(IServiceCollection services)
+void ConfigureServices(WebApplicationBuilder builder)
 {
-    ConfigureDb(services);
-    services.TryAddScoped<IContractorService, ContractorService>();
+    ConfigureDb(builder);
+    builder.Services.TryAddScoped<IContractorService, ContractorService>();
 }
 
-void ConfigureDb(IServiceCollection services)
+void ConfigureDb(WebApplicationBuilder builder)
 {
 
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
     if (string.IsNullOrEmpty(connectionString))
     {
-        // Fallback: build from individual environment variables
+        // build from individual environment variables
         var host = builder.Configuration["DB_HOST"] ?? "localhost";
         var database = builder.Configuration["POSTGRES_DB"] ?? "contractors_db";
         var username = builder.Configuration["POSTGRES_USER"] ?? "contractors_user";
@@ -57,6 +57,6 @@ void ConfigureDb(IServiceCollection services)
         connectionString = $"Host={host};Database={database};Username={username};Password={password}";
     }
 
-    services.AddDbContext<ContractorsDbContext>(options =>
+    builder.Services.AddDbContext<ContractorsDbContext>(options =>
         options.UseNpgsql(connectionString));
 }
