@@ -16,6 +16,11 @@ namespace ContractorsAPI.Database
             modelBuilder.Entity<User>()
                 .HasKey(x => x.Id);
 
+            modelBuilder.Entity<User>()
+                .HasMany(e => e.Contractors)
+                .WithOne(c => c.User)
+                .HasForeignKey(c => c.UserId);
+
             // if the contractors were common for multiple users
             //modelBuilder.Entity<User>()
             //    .HasMany(e => e.Contractors)
@@ -24,15 +29,82 @@ namespace ContractorsAPI.Database
             modelBuilder.Entity<Contractor>()
                 .HasKey(c => c.Id);
 
+            modelBuilder.Entity<Contractor>()
+                .HasMany(c => c.AdditionalData)
+                .WithOne(cad => cad.Contractor)
+                .HasForeignKey(cad => cad.ContractorId);
+
+            modelBuilder.Entity<Contractor>()
+                .Property(c => c.Description)
+                .HasMaxLength(200);
+
+            modelBuilder.Entity<Contractor>()
+                .Property(c => c.Name)
+                .HasMaxLength(100);
+
             // each contractor should have only one field with a given name
+            // the case insensitivity will be handled in application BE and FE
             modelBuilder.Entity<ContractorAdditionalData>()
                 .HasKey(cad => new { cad.ContractorId, cad.FieldName });
 
+            modelBuilder.Entity<ContractorAdditionalData>()
+                .Property(cad => cad.FieldName)
+                .HasMaxLength(100);
+
+            modelBuilder.Entity<ContractorAdditionalData>()
+                .Property(cad => cad.FieldType)
+                .HasMaxLength(50);
+
+            // the type must be 
+            modelBuilder.Entity<ContractorAdditionalData>()
+                .ToTable(t => t.HasCheckConstraint("CK_ContractorAdditionalData_FieldType", ValidateFieldTypeExpression()));
+
+            modelBuilder.Entity<ContractorAdditionalData>()
+                .Property(e => e.FieldType)
+                .HasConversion(
+                    v => ConvertToRuntimeType(v),
+                    v => ConvertToDatabaseValue(v)
+                );
+
+            modelBuilder.Entity<ContractorAdditionalData>()
+                .Property(cad => cad.FieldValue)
+                .HasMaxLength(1000);
 
             // if the contractors were common for multiple users
             //modelBuilder.Entity<ContractorAdditionalData>()
             //    .HasKey(cad => new { cad.ContractorId, cad.UserId, cad.FieldName });
 
+        }
+
+        private string ValidateFieldTypeExpression()
+        {
+            return "FieldType IN ('string', 'int', 'bool', 'decimal', 'datetime')";
+        }
+
+        private string ConvertToDatabaseValue(Type type)
+        {
+            return type switch
+            {
+                _ when type == typeof(string) => "string",
+                _ when type == typeof(int) => "int",
+                _ when type == typeof(bool) => "bool",
+                _ when type == typeof(decimal) => "decimal",
+                _ when type == typeof(DateTime) => "datetime",
+                _ => throw new ArgumentException($"Unsupported type: {type}")
+            };
+        }
+
+        private Type ConvertToRuntimeType(string dbValue)
+        {
+            return dbValue switch
+            {
+                "string" => typeof(string),
+                "int" => typeof(int),
+                "bool" => typeof(bool),
+                "decimal" => typeof(decimal),
+                "datetime" => typeof(DateTime),
+                _ => throw new ArgumentException($"Unknown database value: {dbValue}")
+            };
         }
     }
 }

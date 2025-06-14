@@ -10,6 +10,7 @@
 
         // if the contractors were common for multiple users
         //public ICollection<User> ContractorUsers { get; set; } = new List<User>();
+        public virtual User User { get; set; }
         public virtual ICollection<ContractorAdditionalData> AdditionalData { get; set; } = new List<ContractorAdditionalData>();
 
     }
