@@ -1,0 +1,47 @@
+services:
+  contractors-db:
+    image: postgres:17
+    container_name: contractors_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${PG_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - contractors_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # .NET Web API Backend
+  contractors-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: contractors_api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+        # temporary for dev
+      - ConnectionStrings__DefaultConnection=Host=contractors-db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - ASPNETCORE_URLS=http://+:5000
+    ports:
+      - "${API_PORT}:5000"
+    depends_on:
+      - contractors-db
+    networks:
+      - contractors_network
+    restart: unless-stopped
+    # temporary for dev
+    volumes:
+      - ./backend:/app/src  
+      
+    networks:
+      contractors_network:
+        driver: bridge
