@@ -4,6 +4,7 @@ using ContractorsAPI.Model.Common;
 using ContractorsAPI.Model.Contractor;
 using ContractorsAPI.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic.FileIO;
 using System.Linq;
 
 namespace ContractorsAPI.Services
@@ -37,7 +38,7 @@ namespace ContractorsAPI.Services
                     contractor.Name,
                     contractor.Description,
                     contractor.UserId,
-                    contractor.AdditionalData.Select(ad => new AdditionalDataDTO(
+                    contractor.AdditionalData.Select(ad => new GetAdditionalDataDTO(
                         contractorId,
                         ad.FieldName,
                         ad.FieldType,
@@ -50,7 +51,7 @@ namespace ContractorsAPI.Services
             }
         }
 
-        public async Task<Result<PaginatedData<GetContractorDTO>>> GetContractorsAsync(int userId, string query, int page, int count, bool orderByAsc, CancellationToken ct)
+        public async Task<Result<PaginatedData<GetContractorDTO>>> GetContractorsAsync(int userId, string? query, int page, int count, bool orderByAsc, CancellationToken ct)
         {
             try
             {
@@ -77,7 +78,7 @@ namespace ContractorsAPI.Services
                         c.Name,
                         c.Description,
                         c.UserId,
-                        c.AdditionalData.Select(ad => new AdditionalDataDTO(
+                        c.AdditionalData.Select(ad => new GetAdditionalDataDTO(
                             ad.ContractorId,
                             ad.FieldName,
                             ad.FieldType,
@@ -91,6 +92,86 @@ namespace ContractorsAPI.Services
             {
                 _logger.LogError($"Exception thrown while getting contractors. Exception: {ex.Message}.", ex);
                 return Result<PaginatedData<GetContractorDTO>>.Failure("The encountered issue while getting contractors.", StatusCodes.Status500InternalServerError);
+            }
+        }
+
+
+        public async Task<Result<int>> CreateNewContractor(AddUpdateContractorDTO contractorDTO)
+        {
+            if (!_dbContext.Users.Any(u => u.Id == contractorDTO.UserId))
+            {
+                return Result<int>.Failure($"No user with given id {contractorDTO.UserId} found.", StatusCodes.Status404NotFound);
+            }
+
+            var invalidProperties = contractorDTO.AdditionalData
+                .GroupBy(ad => ad.FieldName)
+                .Where(g => 
+                    g.Count() > 1 
+                    || g.Any(ad => !CheckIfFieldIsCorrect(ad.FieldType, ad.FieldValue)))
+                .Select(g => g.Key)
+                .ToList();
+
+            if (invalidProperties.Count > 0)
+            {
+                var message = $"Invalid fields: {string.Join(',', invalidProperties)}. Check for duplicates and if the values are correct.";
+                return Result<int>.Failure(message, StatusCodes.Status422UnprocessableEntity);
+            }
+
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+
+            try
+            {
+                var contractor = new Contractor()
+                {
+                    UserId = contractorDTO.UserId,
+                    Name = contractorDTO.Name,
+                    Description = contractorDTO.Description ?? string.Empty,
+                };
+
+                _dbContext.Contractors.Add(contractor);
+                await _dbContext.SaveChangesAsync();
+
+                var additionalData = contractorDTO.AdditionalData
+                    .Select(ad => new ContractorAdditionalData()
+                    {
+                        ContractorId = contractor.Id,
+                        FieldName = ad.FieldName,
+                        FieldType = ad.FieldType,
+                        FieldValue = ad.FieldValue
+                    }).ToList();
+
+                _dbContext.ContractorsAdditionalData.AddRange(additionalData);
+
+                await _dbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Result<int>.Success(contractor.Id);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError($"Exception thrown while adding a contractor. Exception: {ex.Message}.", ex);
+                return Result<int>.Failure("The encountered issue while adding a contractor.", StatusCodes.Status500InternalServerError);
+            }            
+        }
+
+        private bool CheckIfFieldIsCorrect(string type, string value)
+        {
+            switch (type)
+            {
+                case ("string"):
+                    // string can be more or less anything
+                    return true;
+                case ("int"):
+                    return int.TryParse(value, out _);
+                case ("double"):
+                    return double.TryParse(value, out _);
+                case ("char"):
+                    return value.Length == 1;
+                case ("bool"):
+                    return bool.TryParse(value.ToLower(), out _);
+                default: 
+                    return false;
             }
         }
     }

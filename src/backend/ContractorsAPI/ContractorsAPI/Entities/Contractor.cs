@@ -1,8 +1,11 @@
-﻿namespace ContractorsAPI.Entities
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ContractorsAPI.Entities
 {
     public class Contractor
     {
-        public required int Id { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
         public required string Name { get; set; }
         public string Description { get; set; } = string.Empty;
 

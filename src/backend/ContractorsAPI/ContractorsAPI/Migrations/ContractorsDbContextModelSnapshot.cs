@@ -2,7 +2,6 @@
 using ContractorsAPI.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,11 +10,9 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ContractorsAPI.Migrations
 {
     [DbContext(typeof(ContractorsDbContext))]
-    [Migration("20250614113906_init")]
-    partial class init
+    partial class ContractorsDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -73,10 +70,7 @@ namespace ContractorsAPI.Migrations
 
                     b.HasKey("ContractorId", "FieldName");
 
-                    b.ToTable("ContractorsAdditionalData", t =>
-                        {
-                            t.HasCheckConstraint("CK_ContractorAdditionalData_FieldType", "'FieldType' IN ('string', 'int', 'bool', 'decimal', 'datetime')");
-                        });
+                    b.ToTable("ContractorsAdditionalData");
                 });
 
             modelBuilder.Entity("ContractorsAPI.Entities.User", b =>

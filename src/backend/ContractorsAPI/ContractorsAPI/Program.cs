@@ -1,8 +1,10 @@
 using ContractorsAPI.Database;
 using ContractorsAPI.Services;
 using ContractorsAPI.Services.Interfaces;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +17,16 @@ builder.Services.AddSwaggerGen();
 
 ConfigureServices(builder);
 
+
+
 var app = builder.Build();
+
+app.UseRequestLocalization(options =>
+{
+    options.DefaultRequestCulture = new RequestCulture(CultureInfo.InvariantCulture);
+    options.SupportedCultures = [CultureInfo.InvariantCulture];
+    options.SupportedUICultures = [CultureInfo.InvariantCulture];
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

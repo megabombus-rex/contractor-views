@@ -65,11 +65,6 @@ namespace ContractorsAPI.Database
                 .Property(cad => cad.FieldType)
                 .HasMaxLength(50);
 
-            // the type must be 
-            modelBuilder.Entity<ContractorAdditionalData>()
-                .ToTable(t => t.HasCheckConstraint("CK_ContractorAdditionalData_FieldType", ValidateFieldTypeExpression()));
-
-
             modelBuilder.Entity<ContractorAdditionalData>()
                 .Property(cad => cad.FieldValue)
                 .HasMaxLength(1000);
@@ -78,11 +73,6 @@ namespace ContractorsAPI.Database
             //modelBuilder.Entity<ContractorAdditionalData>()
             //    .HasKey(cad => new { cad.ContractorId, cad.UserId, cad.FieldName });
 
-        }
-
-        private string ValidateFieldTypeExpression()
-        {
-            return "'FieldType' IN ('string', 'int', 'bool', 'decimal', 'datetime')";
         }
     }
 }

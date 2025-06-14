@@ -23,8 +23,8 @@ services:
   # .NET Web API Backend
   contractors-api:
     build:
-      context: ./backend/ContractorsAPI
-      dockerfile: Dockerfile
+      context: backend/ContractorsAPI
+      dockerfile: ContractorsAPI/Dockerfile
     container_name: contractors_api
     environment:
       - ASPNETCORE_ENVIRONMENT=Development

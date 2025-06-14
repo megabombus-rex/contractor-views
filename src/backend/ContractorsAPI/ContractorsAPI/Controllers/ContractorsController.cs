@@ -1,4 +1,5 @@
-﻿using ContractorsAPI.Services.Interfaces;
+﻿using ContractorsAPI.Model.Contractor;
+using ContractorsAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,7 +20,7 @@ namespace ContractorsAPI.Controllers
 
         [Route("{contractorId:guid}")]
         [HttpGet]
-        public async Task<IActionResult> GetContractorByIdAsync(int contractorId, CancellationToken ct)
+        public async Task<IActionResult> GetContractorByIdAsync([FromRoute] int contractorId, CancellationToken ct)
         { 
             if (contractorId < 0)
             {
@@ -46,16 +47,19 @@ namespace ContractorsAPI.Controllers
             }
         }
 
-        [Route("{contractorId:guid}")]
         [HttpGet]
-        public async Task<IActionResult> GetContractorsAsync(int userId, string query, int page, int count, bool orderByAsc, CancellationToken ct)
+        public async Task<IActionResult> GetContractorsAsync([FromHeader] int userId, [FromQuery] string? query, [FromQuery] int? page, [FromQuery] int? count, [FromQuery] bool? orderByAsc, CancellationToken ct)
         {
+            page ??= 1;
+            count ??= 10;
+            orderByAsc ??= true;
+
             if (userId < 0)
             {
                 return NotFound("User id cannot be lesser than 0.");
             }
 
-            var result = await _contractorService.GetContractorsAsync(userId, query, page, count, orderByAsc, ct);
+            var result = await _contractorService.GetContractorsAsync(userId, query, page.Value, count.Value, orderByAsc.Value, ct);
 
             if (result.IsSuccess)
             {
@@ -67,8 +71,30 @@ namespace ContractorsAPI.Controllers
                 {
                     case (StatusCodes.Status404NotFound):
                         return NotFound(result);
-                    case (StatusCodes.Status500InternalServerError):
+                    default:
                         return BadRequest(result);
+                }
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddContractorAsync([FromBody] AddUpdateContractorDTO dto, CancellationToken ct)
+        {
+
+            var result = await _contractorService.CreateNewContractor(dto);
+
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            else
+            {
+                switch (result.ErrorCode)
+                {
+                    case (StatusCodes.Status404NotFound):
+                        return NotFound(result);
+                    case (StatusCodes.Status422UnprocessableEntity):
+                        return UnprocessableEntity(result);
                     default:
                         return BadRequest(result);
                 }
