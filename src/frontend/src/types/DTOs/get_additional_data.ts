@@ -1,4 +1,4 @@
-export interface GetAdditionalDataDto {
+export interface GetAdditionalDataDTO {
     contractorId: number,
     fieldName: string,
     fieldType: string,

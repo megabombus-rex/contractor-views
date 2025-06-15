@@ -1,18 +1,109 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import Button from '../../components/ui/button/button';
 import { GetContractorDTO } from '@/types/DTOs/get_contractor';
-import AddContractorPopup from '@/components/ui/popups/add_contractor_popup';
+import AddUpdateContractorPopup from '@/components/ui/popups/add_contractor_popup';
+import { AddNewContractorDTO } from '@/types/DTOs/new_contractor';
+import { AdditionalDataDTO } from '@/types/DTOs/new_additional_data';
+import { GetAdditionalDataDTO } from '@/types/DTOs/get_additional_data';
+import { EditState } from '../../components/ui/popups/edit_state'
 
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 const ContractorsPage: React.FC = () => {
   const [contractors, setContractors] = useState<GetContractorDTO[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPopup, setShowPopup] = useState(false);
+  const [page, setPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editedContractor, setEditedContractor] = useState<AddNewContractorDTO|null>(null)
+  const [editedContractorId, setEditedContractorId] = useState<number|null>(null);
+
+  const [editState, setEditState] = useState<EditState>({
+    mode: 'closed',
+    contractor: null,
+    contractorId: null,
+    loading: false,
+    error: null
+  });
+
+  const transformContractorForEdit = (contractor: GetContractorDTO): AddNewContractorDTO => {
+    return {
+      name: contractor.name,
+      description: contractor.description,
+      userId: contractor.userId,
+      additionalData: contractor.additionalData.map(item => ({
+        fieldName: item.fieldName,
+        fieldType: item.fieldType,
+        fieldValue: item.fieldValue
+      } as AdditionalDataDTO))
+    };
+  };
+
+  const openCreatePopup = useCallback(() => {
+    setEditState({
+      mode: 'create',
+      contractor: null,
+      contractorId: null,
+      loading: false,
+      error: null
+    });
+    setShowPopup(true);
+  }, []);
+
+  const openEditPopup = useCallback((contractor: GetContractorDTO) => {
+    setEditState({
+      mode: 'edit',
+      contractor: transformContractorForEdit(contractor),
+      contractorId: contractor.id,
+      loading: false,
+      error: null
+    });
+    setShowPopup(true);
+  }, []);
+
+  const closePopup = useCallback(() => {
+    setShowPopup(false);
+    setEditState({
+      mode: 'closed',
+      contractor: null,
+      contractorId: null,
+      loading: false,
+      error: null
+    });
+  }, []);
+
+  const handleContractorSaved = useCallback(async () => {
+    closePopup();
+    await fetchContractors(page);
+  }, [page]);
+
+  const handleEditError = useCallback((error: string) => {
+    setEditState(prev => ({
+      ...prev,
+      error,
+      loading: false
+    }));
+  }, []);
+
+  const getApiConfig = () => {
+    const isEditing = editState.mode === 'edit';
+    return {
+      url: `${apiUrl}${isEditing ? `/api/contractors/${editState.contractorId}` : '/api/contractors'}`,
+      method: isEditing ? 'PUT' : 'POST'
+    };
+  };
+
+  const updatePage = async (nextPage:number) => {
+    setPage(nextPage)
+    
+    await fetchContractors(nextPage)
+  }
 
   const getReport = async () => {
-    const response = await fetch(`http://localhost:5070/api/report`, {
+    const response = await fetch(`${apiUrl}/api/report`, {
         headers: {
           'Content-Type': 'application/pdf',
           'userId': '1'
@@ -29,23 +120,20 @@ const ContractorsPage: React.FC = () => {
       });
   }
 
-  const popCreate = () => {
-    setShowPopup(true)
-  }
-
-  const fetchContractors = async () => {
+  const fetchContractors = async (queryPage:number) => {
     setLoading(true);
     setError(null);
     
     try {
       const params = new URLSearchParams({
-        page: '1',
+        page: queryPage.toString(),
         count: '10',
         orderByAsc: 'true'
       });
       
       // Replace with your actual API endpoint
-      const response = await fetch(`http://localhost:7140/api/contractors?${params.toString()}`, {
+      const response = await fetch(`${apiUrl}/api/contractors?${params.toString()}`, {
+      //const response = await fetch(`http://localhost:7140/api/contractors?${params.toString()}`, {
         headers: {
           'Content-Type': 'application/json',
           'userId': '1'
@@ -84,6 +172,7 @@ const ContractorsPage: React.FC = () => {
         throw new Error('No data received from API');
       }
       
+      setTotalPages(result.value.totalPages)
       setContractors(result.value.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch contractors');
@@ -143,7 +232,7 @@ const ContractorsPage: React.FC = () => {
       <h1>Contractors</h1>
       
       <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        <Button onClick={fetchContractors} loading={loading} disabled={loading}>
+        <Button onClick={() => fetchContractors(1)} loading={loading} disabled={loading}>
           Load Contractors from API
         </Button>
         
@@ -155,7 +244,7 @@ const ContractorsPage: React.FC = () => {
           Clear List
         </Button>
 
-        <Button onClick={popCreate} variant="default">
+        <Button onClick={openCreatePopup } variant="default">
           Add new contractor. 
         </Button>
 
@@ -163,12 +252,34 @@ const ContractorsPage: React.FC = () => {
           Get contractors report.
         </Button>
       </div>
-      <AddContractorPopup 
+      {contractors.length > 0 
+      && (<div style={{ marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        <Button disabled={page < 2} onClick={() => updatePage(page - 1)}> Previous page </Button>
+        <span style={{ 
+              padding: '8px 16px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '4px',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              color: '#333'
+            }}>
+              Page {page} of {totalPages}
+            </span>
+        <Button disabled={page >= totalPages} onClick={() => updatePage(page + 1)}> Next page </Button>
+      </div>)}
+      <AddUpdateContractorPopup 
+        mode={editState.mode}
         isOpen={showPopup} 
-        onClose={() => setShowPopup(false)} 
-        onContractorAdded={() => setShowPopup(false)} 
-        targetUrl={'http://localhost:7140/api/contractors'} 
-        userId={1}/>
+        onClose={closePopup}
+        onContractorAdded={handleContractorSaved}
+        onError={handleEditError}
+        targetUrl={getApiConfig().url}
+        httpMethod={getApiConfig().method as "POST" | "PUT"}
+        initialContractor={editState.contractor}
+        loading={editState.loading}
+        error={editState.error}
+        userId={1}
+      />
       {error && (
         <div style={{ 
           color: '#d32f2f', 
@@ -205,6 +316,7 @@ const ContractorsPage: React.FC = () => {
                   {contractor.description}
                 </div>
               )}
+            <Button onClick={() => openEditPopup(contractor)} size='small'>Edit contractor</Button>
             </div>
             
             {contractor.additionalData && contractor.additionalData.length > 0 && (

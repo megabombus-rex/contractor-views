@@ -45,7 +45,7 @@ namespace ContractorsAPI.Reports.ContractorsReport
                     column.Item().Text(text =>
                     {
                         text.Span($"User: ").SemiBold();
-                        text.Span($"{_data.User.Id}, {_data.User.UserName}");
+                        text.Span($"{_data.User.UserName}");
                     });
                 });
 

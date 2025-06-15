@@ -176,7 +176,8 @@ namespace ContractorsAPI.Services
 
             if (!await _dbContext.Users.AnyAsync(u => u.Id == contractorDTO.UserId, ct))
             {
-                return Result.Failure($"No user with given id was found.", StatusCodes.Status404NotFound);
+                _logger.LogError($"No user with id {userId} was found.");
+                return Result.Failure("No user with given id was found.", StatusCodes.Status404NotFound);
             }
 
             var contractorToUpdate = await _dbContext.Contractors
@@ -185,6 +186,7 @@ namespace ContractorsAPI.Services
 
             if (contractorToUpdate == null)
             {
+                _logger.LogError($"No contractor with id {contractorId} was found for a user with id {userId}.");
                 return Result.Failure("The contractor with given id could not be found for a user with given id.", StatusCodes.Status404NotFound);
             }
 

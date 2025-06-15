@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Button from '../button/button';
 import { AdditionalDataDTO } from '@/types/DTOs/new_additional_data';
 import { AddNewContractorDTO } from '@/types/DTOs/new_contractor';
@@ -13,51 +13,86 @@ interface Result<T> {
 }
 
 interface AddContractorPopupProps {
+  mode: 'create' | 'edit' | 'closed';
   targetUrl: string;
+  httpMethod: 'POST' | 'PUT';
   userId: number;
   isOpen: boolean;
+  initialContractor: AddNewContractorDTO | null;
+  loading: boolean;
+  error: string | null;
   onClose: () => void;
   onContractorAdded?: () => void; // Callback to refresh the contractors list
+  onError?: (error: string) => void;
 }
 
-const AddContractorPopup: React.FC<AddContractorPopupProps> = ({
+const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
+  mode,
   targetUrl,
+  httpMethod,
   userId,
   isOpen,
+  initialContractor,
+  loading: externalLoading,
+  error: externalError,
   onClose,
-  onContractorAdded
+  onContractorAdded,
+  onError,
 }) => {
-  const [contractor, setContractor] = useState<AddNewContractorDTO>({
-    userId: userId,
-    name: '',
-    description: '',
-    additionalData: []
-  });
-  
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const addAdditionalField = () => {
+  const [internalLoading, setInternalLoading] = useState(false);
+  const [internalError, setInternalError] = useState<string | null>(null);
+  const [contractor, setContractor] = useState<AddNewContractorDTO>({
+  userId: userId,
+  name: '',
+  description: '',
+  additionalData: []
+  });
+
+  const loading = externalLoading || internalLoading;
+  const error = externalError || internalError;
+
+    useEffect(() => {
+    if (isOpen) {
+      if (mode === 'edit' && initialContractor) {
+        setContractor(initialContractor);
+      } else if (mode === 'create') {
+        resetForm();
+      }
+      setInternalError(null);
+      console.log(mode)
+    }
+  }, [isOpen, mode, initialContractor, userId]);
+
+  const addAdditionalData = () => {
     setContractor(prev => ({
       ...prev,
-      additionalFields: [
+      additionalData: [
         ...prev.additionalData,
-        { fieldName: '', fieldType: 'string', fieldValue: '' }
+        { fieldName: '', fieldType: 'string', fieldValue: '' } as AdditionalDataDTO
       ]
     }));
+    console.log("Adding additional field.")
+
+    contractor.additionalData.forEach((additionalData, index) => {
+        console.log(`Contractor ${index + 1}:`);
+        console.log(`  Field Name: ${additionalData.fieldName}`);
+        console.log(`  Field Type: ${additionalData.fieldType}`);
+        console.log(`  Field Value: ${additionalData.fieldValue}`);
+      });
   };
 
-  const removeAdditionalField = (index: number) => {
+  const removeAdditionalData = (index: number) => {
     setContractor(prev => ({
       ...prev,
-      additionalFields: prev.additionalData.filter((_, i) => i !== index)
+      additionalData: prev.additionalData.filter((_, i) => i !== index)
     }));
   };
 
-  const updateAdditionalField = (index: number, field: keyof AdditionalDataDTO, value: string) => {
+  const updateAdditionalData = (index: number, field: keyof AdditionalDataDTO, value: string) => {
     setContractor(prev => ({
       ...prev,
-      additionalFields: prev.additionalData.map((item, i) => 
+      additionalData: prev.additionalData.map((item, i) => 
         i === index ? { ...item, [field]: value } : item
       )
     }));
@@ -70,13 +105,13 @@ const AddContractorPopup: React.FC<AddContractorPopupProps> = ({
       description: '',
       additionalData: []
     });
-    setError(null);
+    setInternalError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
+    setInternalLoading(true);
+    setInternalError(null);
 
     try {
       if (!contractor.name.trim()) {
@@ -104,9 +139,10 @@ const AddContractorPopup: React.FC<AddContractorPopupProps> = ({
       };
 
       const response = await fetch(targetUrl, {
-        method: 'POST',
+        method: httpMethod,
         headers: {
           'Content-Type': 'application/json',
+          'UserId' : '1'
         },
         body: JSON.stringify(contractorData)
       });
@@ -114,12 +150,19 @@ const AddContractorPopup: React.FC<AddContractorPopupProps> = ({
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
-      // creating a contractor returns his Id (int)
-      const result: Result<number> = await response.json();
-
-      if (!result.isSuccess) {
-        throw new Error(result.errorMessage || 'Failed to create a contractor.');
+      
+      if (mode === 'create') {
+        // Creating a contractor returns his Id (int)
+        const result: Result<number> = await response.json();
+        if (!result.isSuccess) {
+          throw new Error(result.errorMessage || 'Failed to create contractor.');
+        }
+      } else {
+        // Updating might return different response format
+        const result: Result<any> = await response.json();
+        if (!result.isSuccess) {
+          throw new Error(result.errorMessage || 'Failed to update contractor.');
+        }
       }
 
       resetForm();
@@ -129,9 +172,9 @@ const AddContractorPopup: React.FC<AddContractorPopupProps> = ({
       }
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create a contractor.');
+      const errorMessage = err instanceof Error ? err.message : `Failed to ${mode === 'create' ? 'create' : 'update'} contractor.`;
     } finally {
-      setLoading(false);
+      setInternalLoading(false);
     }
   };
 
@@ -143,6 +186,10 @@ const AddContractorPopup: React.FC<AddContractorPopupProps> = ({
   };
 
   if (!isOpen) return null;
+  
+  const isEditing = mode === 'edit';
+  const title = isEditing ? 'Edit Contractor' : 'Add New Contractor';
+  const submitButtonText = isEditing ? 'Update Contractor' : 'Create Contractor';
 
   return (
     <div style={{
@@ -169,21 +216,10 @@ const AddContractorPopup: React.FC<AddContractorPopupProps> = ({
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, fontSize: '24px' }}>Add New Contractor</h2>
-          <button
-            onClick={handleClose}
-            disabled={loading}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '24px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              padding: '5px',
-              color: '#666'
-            }}
-          >
-            ×
-          </button>
+          <h2 style={{ margin: 0, fontSize: '24px' }}> {title}</h2>
+          <Button onClick={handleClose} size='small' disabled={false}> 
+            x 
+          </Button>
         </div>
 
         {error && (
@@ -246,7 +282,7 @@ const AddContractorPopup: React.FC<AddContractorPopupProps> = ({
           <div style={{ marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
               <label style={{ fontWeight: 'bold' }}>Additional Fields</label>
-              <Button type="button" onClick={addAdditionalField} disabled={loading} size="small">
+              <Button type="button" onClick={addAdditionalData} disabled={loading} size="small">
                 +
               </Button>
             </div>
@@ -261,21 +297,9 @@ const AddContractorPopup: React.FC<AddContractorPopupProps> = ({
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Field {index + 1}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeAdditionalField(index)}
-                    disabled={loading}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#d32f2f',
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      fontSize: '16px',
-                      padding: '2px 5px'
-                    }}
-                  >
-                    ×
-                  </button>
+                  <Button type="button" onClick={() => removeAdditionalData(index)} disabled={loading} size="small">
+                    X
+                  </Button>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
@@ -286,7 +310,7 @@ const AddContractorPopup: React.FC<AddContractorPopupProps> = ({
                     <input
                       type="text"
                       value={field.fieldName}
-                      onChange={(e) => updateAdditionalField(index, 'fieldName', e.target.value)}
+                      onChange={(e) => updateAdditionalData(index, 'fieldName', e.target.value)}
                       disabled={loading}
                       style={{
                         width: '100%',
@@ -306,7 +330,7 @@ const AddContractorPopup: React.FC<AddContractorPopupProps> = ({
                     </label>
                     <select
                       value={field.fieldType}
-                      onChange={(e) => updateAdditionalField(index, 'fieldType', e.target.value)}
+                      onChange={(e) => updateAdditionalData(index, 'fieldType', e.target.value)}
                       disabled={loading}
                       style={{
                         width: '100%',
@@ -317,10 +341,10 @@ const AddContractorPopup: React.FC<AddContractorPopupProps> = ({
                         boxSizing: 'border-box'
                       }}
                     >
-                      <option value="varchar">Text (varchar)</option>
+                      <option value="string">Text (string)</option>
                       <option value="int">Number (int)</option>
-                      <option value="decimal">Decimal</option>
-                      <option value="boolean">Boolean</option>
+                      <option value="double">Decimal (double)</option>
+                      <option value="bool">Boolean</option>
                       <option value="date">Date</option>
                     </select>
                   </div>
@@ -333,7 +357,7 @@ const AddContractorPopup: React.FC<AddContractorPopupProps> = ({
                   <input
                     type="text"
                     value={field.fieldValue}
-                    onChange={(e) => updateAdditionalField(index, 'fieldValue', e.target.value)}
+                    onChange={(e) => updateAdditionalData(index, 'fieldValue', e.target.value)}
                     disabled={loading}
                     style={{
                       width: '100%',
@@ -362,7 +386,7 @@ const AddContractorPopup: React.FC<AddContractorPopupProps> = ({
               Cancel
             </Button>
             <Button type="submit" loading={loading} disabled={loading || !contractor.name.trim()}>
-              Create Contractor
+              {submitButtonText}
             </Button>
           </div>
         </form>
@@ -371,4 +395,4 @@ const AddContractorPopup: React.FC<AddContractorPopupProps> = ({
   );
 };
 
-export default AddContractorPopup;
+export default AddUpdateContractorPopup;

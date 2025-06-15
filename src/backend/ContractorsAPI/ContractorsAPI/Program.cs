@@ -40,14 +40,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseSerilogRequestLogging();
 app.UseCors();
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
-
+app.Logger.LogInformation("Application starting up locally");
 void ConfigureServices(WebApplicationBuilder builder)
 {
     ConfigureDb(builder);

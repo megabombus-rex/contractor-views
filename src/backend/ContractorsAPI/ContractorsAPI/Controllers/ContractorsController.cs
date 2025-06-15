@@ -18,7 +18,7 @@ namespace ContractorsAPI.Controllers
             _contractorService = contractorService;
         }
 
-        [Route("{contractorId:guid}")]
+        [Route("{contractorId:int}")]
         [HttpGet]
         public async Task<IActionResult> GetContractorByIdAsync([FromRoute] int contractorId, CancellationToken ct)
         { 
@@ -95,6 +95,52 @@ namespace ContractorsAPI.Controllers
                         return NotFound(result);
                     case (StatusCodes.Status422UnprocessableEntity):
                         return UnprocessableEntity(result);
+                    default:
+                        return BadRequest(result);
+                }
+            }
+        }
+
+        [Route("{contractorId:int}")]
+        [HttpPut]
+        public async Task<IActionResult> UpdateContractorAsync([FromHeader(Name = "UserId")] int userId, [FromRoute] int contractorId, [FromBody] AddUpdateContractorDTO dto, CancellationToken ct)
+        {
+            var result = await _contractorService.UpdateContractorAsync(userId, contractorId, dto, ct);
+
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            else
+            {
+                switch (result.ErrorCode)
+                {
+                    case (StatusCodes.Status404NotFound):
+                        return NotFound(result);
+                    case (StatusCodes.Status422UnprocessableEntity):
+                        return UnprocessableEntity(result);
+                    default:
+                        return BadRequest(result);
+                }
+            }
+        }
+
+        [Route("{contractorId:int}")]
+        [HttpDelete]
+        public async Task<IActionResult> DeleteContractorAsync([FromHeader(Name = "UserId")] int userId, [FromRoute] int contractorId, CancellationToken ct)
+        {
+            var result = await _contractorService.DeleteContractorAsync(userId, contractorId, ct);
+
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            else
+            {
+                switch (result.ErrorCode)
+                {
+                    case (StatusCodes.Status404NotFound):
+                        return NotFound(result);
                     default:
                         return BadRequest(result);
                 }
