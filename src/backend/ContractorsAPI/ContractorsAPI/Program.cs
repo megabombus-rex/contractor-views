@@ -10,6 +10,7 @@ using System.Globalization;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -51,6 +52,7 @@ void ConfigureServices(WebApplicationBuilder builder)
 {
     ConfigureDb(builder);
     builder.Services.TryAddScoped<IContractorService, ContractorService>();
+    builder.Services.TryAddScoped<IReportingService, ReportingService>();
 
 
     builder.Services.AddCors(options =>
