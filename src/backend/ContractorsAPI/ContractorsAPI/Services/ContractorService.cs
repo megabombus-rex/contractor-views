@@ -263,6 +263,8 @@ namespace ContractorsAPI.Services
                     return value.Length == 1;
                 case ("bool"):
                     return bool.TryParse(value.ToLower(), out _);
+                case ("datetime"):
+                    return DateTime.TryParse(value, out _);
                 default: 
                     return false;
             }

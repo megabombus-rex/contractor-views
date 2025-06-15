@@ -4,6 +4,7 @@ using ContractorsAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Serilog;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,9 +18,13 @@ builder.Services.AddSwaggerGen();
 
 ConfigureServices(builder);
 
-
-
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ContractorsDbContext>();
+    db.Database.Migrate();
+}
 
 app.UseRequestLocalization(options =>
 {
@@ -35,6 +40,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors();
 app.UseAuthorization();
 
 app.MapControllers();
@@ -45,11 +51,24 @@ void ConfigureServices(WebApplicationBuilder builder)
 {
     ConfigureDb(builder);
     builder.Services.TryAddScoped<IContractorService, ContractorService>();
+
+
+    builder.Services.AddCors(options =>
+    {
+        options.AddDefaultPolicy(policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+    });
+
+    builder.Host.UseSerilog((context, configuration) =>
+        configuration.ReadFrom.Configuration(context.Configuration));
 }
 
 void ConfigureDb(WebApplicationBuilder builder)
 {
-
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
     if (string.IsNullOrEmpty(connectionString))
