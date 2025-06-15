@@ -1,0 +1,81 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  text-decoration: none;
+  outline: none;
+}
+
+.button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.small {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.medium {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.large {
+  padding: 1rem 2rem;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+.default {
+  background-color: #2563eb;
+  color: white;
+}
+
+.default:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.default:active:not(:disabled) {
+  background-color: #1e40af;
+}
+
+/* Loading state */
+.loading {
+  color: transparent;
+}
+
+.spinner {
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.hiddenText {
+  visibility: hidden;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

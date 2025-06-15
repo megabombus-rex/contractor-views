@@ -30,9 +30,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
         # temporary for dev
       - ConnectionStrings__DefaultConnection=Host=contractors-db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-      - ASPNETCORE_URLS=http://+:5000
+      - ASPNETCORE_URLS=http://+:7140
     ports:
-      - "${API_PORT}:5000"
+      - "${API_PORT}:7140"
     depends_on:
       - contractors-db
     networks:
@@ -42,6 +42,22 @@ services:
     volumes:
       - ./backend:/app/src  
       
+  contractors-frontend:
+    image: alpine:17
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    container_name: contractors_frontend
+    ports:
+      - "${FE_PORT}:5000"
+    networks:
+      - contractors_network
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+
+
+
 volumes:
   postgres_data:
       
