@@ -11,6 +11,24 @@ const ContractorsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showPopup, setShowPopup] = useState(false);
 
+  const getReport = async () => {
+    const response = await fetch(`http://localhost:5070/api/report`, {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'userId': '1'
+        }
+      })
+      .then(response => response.blob())
+      .then(blob => {
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'document.pdf';
+          link.click();
+          window.URL.revokeObjectURL(url);
+      });
+  }
+
   const popCreate = () => {
     setShowPopup(true)
   }
@@ -141,7 +159,7 @@ const ContractorsPage: React.FC = () => {
           Add new contractor. 
         </Button>
 
-        <Button variant="default"> 
+        <Button onClick={getReport} variant="default"> 
           Get contractors report.
         </Button>
       </div>
