@@ -1,5 +1,5 @@
 ﻿using ContractorsAPI.Model.Contractor;
-using ContractorsAPI.Services.Interfaces;
+using ContractorsAPI.Services.Business.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 

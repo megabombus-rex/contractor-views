@@ -4,12 +4,12 @@ using ContractorsAPI.Model.Contractor;
 using ContractorsAPI.Model.Reports;
 using ContractorsAPI.Model.User;
 using ContractorsAPI.Reports.ContractorsReport;
-using ContractorsAPI.Services.Interfaces;
+using ContractorsAPI.Services.Business.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
 
-namespace ContractorsAPI.Services
+namespace ContractorsAPI.Services.Business
 {
     public class ReportingService : IReportingService
     {
@@ -26,7 +26,7 @@ namespace ContractorsAPI.Services
         {
             var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
 
-            if (user == null) 
+            if (user == null)
             {
                 return Result<byte[]>.Failure("User not found.", StatusCodes.Status404NotFound);
             }
@@ -35,14 +35,14 @@ namespace ContractorsAPI.Services
                 .Include(c => c.AdditionalData)
                 .Where(c => c.UserId == userId)
                 .Select(c => new GetContractorDTO(
-                    c.Id, 
-                    c.Name, 
-                    c.Description, 
-                    userId, 
+                    c.Id,
+                    c.Name,
+                    c.Description,
+                    userId,
                     c.AdditionalData.Select(ad => new GetAdditionalDataDTO(
-                        ad.ContractorId, 
-                        ad.FieldName, 
-                        ad.FieldType, 
+                        ad.ContractorId,
+                        ad.FieldName,
+                        ad.FieldType,
                         ad.FieldValue))))
                 .ToListAsync(ct);
 

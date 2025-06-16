@@ -2,10 +2,10 @@
 using ContractorsAPI.Entities;
 using ContractorsAPI.Model.Common;
 using ContractorsAPI.Model.Contractor;
-using ContractorsAPI.Services.Interfaces;
+using ContractorsAPI.Services.Business.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace ContractorsAPI.Services
+namespace ContractorsAPI.Services.Business
 {
     public class ContractorService : IContractorService
     {
@@ -155,7 +155,7 @@ namespace ContractorsAPI.Services
                 await transaction.RollbackAsync(ct);
                 _logger.LogError($"Exception thrown while adding a contractor. Exception: {ex.Message}.", ex);
                 return Result<int>.Failure("The encountered issue while adding a contractor.", StatusCodes.Status500InternalServerError);
-            }            
+            }
         }
 
         public async Task<Result> UpdateContractorAsync(int userId, int contractorId, AddUpdateContractorDTO contractorDTO, CancellationToken ct)
@@ -217,7 +217,7 @@ namespace ContractorsAPI.Services
             {
                 await transaction.RollbackAsync(ct);
                 _logger.LogError($"Exception thrown while adding a contractor. Exception: {ex.Message}.", ex);
-                return Result.Failure("The encountered issue while updating a contractor.", StatusCodes.Status500InternalServerError);
+                return Result.Failure("Encountered issue while updating a contractor.", StatusCodes.Status500InternalServerError);
             }
         }
 
@@ -246,28 +246,28 @@ namespace ContractorsAPI.Services
             {
                 await transaction.RollbackAsync(ct);
                 _logger.LogError($"Exception thrown while adding a contractor. Exception: {ex.Message}.", ex);
-                return Result.Failure("The encountered issue while updating a contractor.", StatusCodes.Status500InternalServerError);
+                return Result.Failure("Encountered issue while updating a contractor.", StatusCodes.Status500InternalServerError);
             }
         }
-        
+
         private bool CheckIfFieldIsCorrect(string type, string value)
         {
             switch (type)
             {
-                case ("string"):
+                case "string":
                     // string can be more or less anything
                     return true;
-                case ("int"):
+                case "int":
                     return int.TryParse(value, out _);
-                case ("double"):
+                case "double":
                     return double.TryParse(value, out _);
-                case ("char"):
+                case "char":
                     return value.Length == 1;
-                case ("bool"):
+                case "bool":
                     return bool.TryParse(value.ToLower(), out _);
-                case ("datetime"):
+                case "datetime":
                     return DateTime.TryParse(value, out _);
-                default: 
+                default:
                     return false;
             }
         }

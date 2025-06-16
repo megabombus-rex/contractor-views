@@ -1,7 +1,7 @@
 ﻿using ContractorsAPI.Model.Common;
 using ContractorsAPI.Model.Contractor;
 
-namespace ContractorsAPI.Services.Interfaces
+namespace ContractorsAPI.Services.Business.Interfaces
 {
     public interface IContractorService
     {

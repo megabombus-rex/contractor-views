@@ -1,6 +1,9 @@
+using ContractorsAPI.Configuration;
 using ContractorsAPI.Database;
-using ContractorsAPI.Services;
-using ContractorsAPI.Services.Interfaces;
+using ContractorsAPI.Services.Authorization;
+using ContractorsAPI.Services.Authorization.Interfaces;
+using ContractorsAPI.Services.Business;
+using ContractorsAPI.Services.Business.Interfaces;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -51,9 +54,10 @@ app.Logger.LogInformation("Application starting up locally");
 void ConfigureServices(WebApplicationBuilder builder)
 {
     ConfigureDb(builder);
+    ConfigureJWT(builder);
     builder.Services.TryAddScoped<IContractorService, ContractorService>();
     builder.Services.TryAddScoped<IReportingService, ReportingService>();
-
+    builder.Services.TryAddScoped<IAuthenticationService, AuthorizationService>();
 
     builder.Services.AddCors(options =>
     {
@@ -67,6 +71,14 @@ void ConfigureServices(WebApplicationBuilder builder)
 
     builder.Host.UseSerilog((context, configuration) =>
         configuration.ReadFrom.Configuration(context.Configuration));
+}
+
+void ConfigureJWT(WebApplicationBuilder builder)
+{
+    var section = builder.Configuration.GetSection("JWT");
+    builder.Services.Configure<AuthorizationJWTOptions>(section);
+
+    Console.WriteLine($"Section found: {section.Value}");
 }
 
 void ConfigureDb(WebApplicationBuilder builder)

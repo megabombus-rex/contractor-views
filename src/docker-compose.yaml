@@ -31,6 +31,10 @@ services:
         # temporary for dev
       - ConnectionStrings__DefaultConnection=Host=contractors-db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - ASPNETCORE_URLS=http://+:7140
+      - JWT__Secret=${JWT_SECRET}
+      - JWT__ISSUER=${JWT_ISSUER}
+      - JWT__AUDIENCE=${JWT_AUDIENCE}
+      - JWT__EXPIRES_IN_MINUTES=${JWT_EXPIRES_IN_MINUTES}
     ports:
       - "${API_PORT}:7140"
     depends_on:
