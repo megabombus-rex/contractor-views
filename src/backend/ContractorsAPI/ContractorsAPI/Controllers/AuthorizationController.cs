@@ -3,6 +3,7 @@ using ContractorsAPI.Model.User;
 using ContractorsAPI.Services.Authorization.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ContractorsAPI.Controllers
 {
@@ -71,11 +72,42 @@ namespace ContractorsAPI.Controllers
             }
         }
 
-        //[Route("remove")]
-        //[HttpDelete]
-        //public async Task<IActionResult> RemoveUserAsync([FromHeader(Name = "jwt")] string jwt, CancellationToken ct)
-        //{
-        //
-        //}
+        [Route("remove")]
+        [HttpDelete]
+        public async Task<IActionResult> RemoveUserAsync([FromHeader(Name = "jwt")] string jwt, CancellationToken ct)
+        {
+            if (string.IsNullOrEmpty(jwt))
+            {
+                return NotFound("User could not be identified.");
+            }
+
+            var currentUserId = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return NotFound("User could not be identified.");
+            }
+
+            var result = await _authenticationService.RemoveUserAsync(int.Parse(currentUserId), ct);
+
+            if (result.IsSuccess)
+            {
+                return NoContent();
+            }
+            else
+            {
+                switch (result.ErrorCode)
+                {
+                    case (StatusCodes.Status404NotFound):
+                        return NotFound(result);
+                    case (StatusCodes.Status422UnprocessableEntity):
+                        return NotFound(result);
+                    case (StatusCodes.Status500InternalServerError):
+                        return BadRequest(result);
+                    default:
+                        return BadRequest(result);
+                }
+            }
+        }
     }
 }
