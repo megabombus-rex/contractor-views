@@ -133,7 +133,7 @@ namespace ContractorsAPI.Controllers
 
             if (result.IsSuccess)
             {
-                return Ok(result);
+                return NoContent();
             }
             else
             {

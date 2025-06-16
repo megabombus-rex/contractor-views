@@ -44,10 +44,6 @@ const App: React.FC = () => {
         <Button onClick={navigateToContractors} size="large">
           View Contractors
         </Button>
-        
-        <Button onClick={navigateToHome} size="medium">
-          Home
-        </Button>
       </div>
 
       <div style={{ 

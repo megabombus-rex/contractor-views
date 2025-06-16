@@ -95,9 +95,9 @@ const ContractorsPage: React.FC = () => {
     }));
   }, []);
 
-  const handleContractorDelete = useCallback(async (contractor: GetContractorDTO) => {
+  const handleContractorDelete = useCallback(async (contractor: GetContractorDTO, currentPage: number) => {
     await deleteContractor(contractor.id);
-    await fetchContractors(page);
+    await fetchContractors(currentPage);
   }, []);
 
   const getApiConfig = () => {
@@ -150,10 +150,6 @@ try {
 
       if (!result.isSuccess) {
         throw new Error(result.errorMessage || 'API returned failure');
-      }
-      
-      if (!result.value) {
-        throw new Error('No data received from API');
       }
       
     } catch (err) {
@@ -373,7 +369,7 @@ try {
             )}
             <div style={{gap: '10px', display: 'flex'}}>
               <Button onClick={() => openEditPopup(contractor)} size='small'>Edit contractor</Button>
-              <Button onClick={() => handleContractorDelete(contractor)} size='small'> <i className="bi bi-trash3"></i> </Button>
+              <Button onClick={() => handleContractorDelete(contractor, page)} size='small'> <i className="bi bi-trash3"></i> </Button>
             </div>
           </div>
         ))}
