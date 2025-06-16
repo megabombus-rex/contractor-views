@@ -7,8 +7,8 @@ import AddUpdateContractorPopup from '@/components/ui/popups/add_contractor_popu
 import { AddNewContractorDTO } from '@/types/DTOs/new_contractor';
 import { AdditionalDataDTO } from '@/types/DTOs/new_additional_data';
 import { EditState } from '../../components/ui/popups/edit_state'
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+import contractorsService from '../../lib/services/contractors_service'
+import reportsService from '../../lib/services/reports_service'
 
 const ContractorsPage: React.FC = () => {
   const [contractors, setContractors] = useState<GetContractorDTO[]>([]);
@@ -100,61 +100,20 @@ const ContractorsPage: React.FC = () => {
     await fetchContractors(currentPage);
   }, []);
 
-  const getApiConfig = () => {
-    const isEditing = editState.mode === 'edit';
-    return {
-      url: `${apiUrl}${isEditing ? `/api/contractors/${editState.contractorId}` : '/api/contractors'}`,
-      method: isEditing ? 'PUT' : 'POST'
-    };
-  };
-
   const updatePage = async (nextPage:number) => {
     setPage(nextPage)
-    
     await fetchContractors(nextPage)
   }
 
   const getReport = async () => {
-    const response = await fetch(`${apiUrl}/api/report`, {
-        headers: {
-          'Content-Type': 'application/pdf',
-          'userId': '1'
-        }
-      })
-      .then(response => response.blob())
-      .then(blob => {
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = 'document.pdf';
-          link.click();
-          window.URL.revokeObjectURL(url);
-      });
+    await reportsService.getReport();
   }
 
   const deleteContractor = async (contractorId:number) => {
-try {      
-      const response = await fetch(`${apiUrl}/api/contractors/${contractorId.toString()}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'UserId': '1'
-        },
-        method: 'DELETE'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result: Result<any> = await response.json();
-
-      if (!result.isSuccess) {
-        throw new Error(result.errorMessage || 'API returned failure');
-      }
-      
+    try {
+      await contractorsService.delete(contractorId);      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete a contractor.');
-      console.error('Error deleting contractor:', err);
     } finally {
       setLoading(false);
     }
@@ -165,25 +124,9 @@ try {
     setError(null);
     
     try {
-      const params = new URLSearchParams({
-        page: queryPage.toString(),
-        count: '10',
-        orderByAsc: 'true'
-      });
       
-      const response = await fetch(`${apiUrl}/api/contractors?${params.toString()}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'userId': '1'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result: Result<PaginatedData<GetContractorDTO>> = await response.json();
-      
+      const result: Result<PaginatedData<GetContractorDTO>> = await contractorsService.getAll(queryPage, 10, true);
+
       if (!result.isSuccess) {
         throw new Error(result.errorMessage || 'API returned failure');
       }
@@ -191,52 +134,20 @@ try {
       if (!result.value) {
         throw new Error('No data received from API');
       }
-      
-      setTotalPages(result.value.totalPages)
-      setContractors(result.value.data);
+
+      setTotalPages(result.value!.totalPages)
+      setPage(queryPage)
+      setContractors(result.value!.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch contractors');
-      console.error('Error fetching contractors:', err);
     } finally {
       setLoading(false);
     }
+    
   };
 
-  const loadSampleData = () => {
-    const sampleContractors: GetContractorDTO[] = [
-      {
-        id: 1,
-        name: "ABC Construction",
-        description: "Residential and commercial construction services",
-        userId: 1,
-        additionalData: [
-          { contractorId: 1, fieldName: "Phone", fieldType: "varchar", fieldValue: "(555) 123-4567" },
-          { contractorId: 1, fieldName: "Years in Business", fieldType: "int", fieldValue: "15" },
-          { contractorId: 1, fieldName: "Hourly Rate", fieldType: "decimal", fieldValue: "85.50" }
-        ]
-      },
-      {
-        id: 2,
-        name: "Smith Plumbing LLC",
-        description: "Professional plumbing and repair services",
-        userId: 1,
-        additionalData: [
-          { contractorId: 2, fieldName: "License Number", fieldType: "varchar", fieldValue: "PL-12345" },
-          { contractorId: 2, fieldName: "Emergency Service", fieldType: "varchar", fieldValue: "24/7" },
-          { contractorId: 2, fieldName: "Service Fee", fieldType: "decimal", fieldValue: "75.00" }
-        ]
-      },
-      {
-        id: 3,
-        name: "Green Landscaping",
-        description: "",
-        userId: 1,
-        additionalData: [
-          { contractorId: 3, fieldName: "Service Area", fieldType: "varchar", fieldValue: "Metro Area" },
-          { contractorId: 3, fieldName: "Crew Size", fieldType: "int", fieldValue: "8" }
-        ]
-      }
-    ];
+  const loadSampleData = async () => {
+    const sampleContractors: GetContractorDTO[] = await contractorsService.loadSampleData();
     
     setContractors(sampleContractors);
   };
@@ -299,9 +210,8 @@ try {
         onClose={closePopup}
         onContractorAdded={handleContractorSaved}
         onError={handleEditError}
-        targetUrl={getApiConfig().url}
-        httpMethod={getApiConfig().method as "POST" | "PUT"}
         initialContractor={editState.contractor}
+        initialContractorId={editState.contractorId}
         loading={editState.loading}
         error={editState.error}
         userId={1}

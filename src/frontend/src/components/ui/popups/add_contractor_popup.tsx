@@ -6,14 +6,14 @@ import { AdditionalDataDTO } from '@/types/DTOs/new_additional_data';
 import { AddNewContractorDTO } from '@/types/DTOs/new_contractor';
 import "bootstrap-icons/font/bootstrap-icons.css";
 import '../../../types/result'
+import contractorsService from '@/lib/services/contractors_service';
 
 interface AddContractorPopupProps {
   mode: 'create' | 'edit' | 'closed';
-  targetUrl: string;
-  httpMethod: 'POST' | 'PUT';
   userId: number;
   isOpen: boolean;
   initialContractor: AddNewContractorDTO | null;
+  initialContractorId:number | null;
   loading: boolean;
   error: string | null;
   onClose: () => void;
@@ -23,11 +23,10 @@ interface AddContractorPopupProps {
 
 const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
   mode,
-  targetUrl,
-  httpMethod,
   userId,
   isOpen,
   initialContractor,
+  initialContractorId,
   loading: externalLoading,
   error: externalError,
   onClose,
@@ -142,41 +141,38 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
         }))
       };
 
-      const response = await fetch(targetUrl, {
-        method: httpMethod,
-        headers: {
-          'Content-Type': 'application/json',
-          'UserId' : '1'
-        },
-        body: JSON.stringify(contractorData)
-      });
+      try {
+        const response: Result<any> = mode === 'create' 
+          ? await contractorsService.create(contractor) 
+          : await contractorsService.update(initialContractorId!, contractor);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        if (mode === 'create') {
+          // Creating a contractor returns his Id (int)
+          const result: Result<number> = await response;
+          if (!result.isSuccess) {
+            throw new Error(result.errorMessage || 'Failed to create contractor.');
+          }
+        } else {
+          // Updating might return different response format
+          const result: Result<any> = await response;
+          if (!result.isSuccess) {
+            throw new Error(result.errorMessage || 'Failed to update contractor.');
+          }
+        }
+      } catch (err) {
+        throw err;
       }
       
-      if (mode === 'create') {
-        // Creating a contractor returns his Id (int)
-        const result: Result<number> = await response.json();
-        if (!result.isSuccess) {
-          throw new Error(result.errorMessage || 'Failed to create contractor.');
-        }
-      } else {
-        // Updating might return different response format
-        const result: Result<any> = await response.json();
-        if (!result.isSuccess) {
-          throw new Error(result.errorMessage || 'Failed to update contractor.');
-        }
-      }
 
       resetForm();
       onClose();
       if (onContractorAdded) {
+        console.log('ADDED');
         onContractorAdded();
       }
-
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : `Failed to ${mode === 'create' ? 'create' : 'update'} contractor.`;
+      setInternalError(errorMessage);
     } finally {
       setInternalLoading(false);
     }
