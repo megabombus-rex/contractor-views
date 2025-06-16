@@ -7,6 +7,16 @@ import Button from '../components/ui/button/button';
 const App: React.FC = () => {
   const router = useRouter();
 
+  const colors = {
+    cardBg: '#f8fff8',
+    cardBorder: '#27ae60',
+    headerText: '#2d5a3d',
+    bodyText: '#555555',
+    accentBg: '#e8f5e8',
+    grayPanelsBg: '#f5f5f5',
+    grayPanelText: '#333'
+  };
+
   const navigateToContractors = () => {
     router.push('/contractors');
   };
@@ -19,8 +29,9 @@ const App: React.FC = () => {
     <div style={{ 
       padding: '40px', 
       fontFamily: 'Arial, sans-serif',
-      maxWidth: '800px',
-      margin: '0 auto'
+      margin: '0 auto',
+      backgroundColor: colors.accentBg,
+      color: colors.headerText,
     }}>
       <h1 style={{ marginBottom: '30px' }}>Contractors Management System</h1>
       
@@ -28,7 +39,7 @@ const App: React.FC = () => {
         display: 'flex', 
         gap: '15px', 
         flexWrap: 'wrap',
-        marginBottom: '30px'
+        marginBottom: '30px',
       }}>
         <Button onClick={navigateToContractors} size="large">
           View Contractors
@@ -40,11 +51,10 @@ const App: React.FC = () => {
       </div>
 
       <div style={{ 
-        color: '#666', 
-        lineHeight: '1.6',
-        backgroundColor: '#f5f5f5',
         padding: '20px',
-        borderRadius: '6px'
+        borderRadius: '6px',
+        color: colors.bodyText,
+        backgroundColor: colors.cardBg
       }}>
         <h3 style={{ marginTop: '0' }}>Welcome to the Contractors Management System</h3>
         <p>

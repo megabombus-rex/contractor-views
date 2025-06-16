@@ -4,13 +4,8 @@ import React, { useEffect, useState } from 'react';
 import Button from '../button/button';
 import { AdditionalDataDTO } from '@/types/DTOs/new_additional_data';
 import { AddNewContractorDTO } from '@/types/DTOs/new_contractor';
-
-interface Result<T> {
-  isSuccess: boolean;
-  value?: T;
-  errorMessage?: string;
-  errorCode?: number;
-}
+import "bootstrap-icons/font/bootstrap-icons.css";
+import '../../../types/result'
 
 interface AddContractorPopupProps {
   mode: 'create' | 'edit' | 'closed';
@@ -39,7 +34,6 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
   onContractorAdded,
   onError,
 }) => {
-
   const [internalLoading, setInternalLoading] = useState(false);
   const [internalError, setInternalError] = useState<string | null>(null);
   const [contractor, setContractor] = useState<AddNewContractorDTO>({
@@ -52,7 +46,17 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
   const loading = externalLoading || internalLoading;
   const error = externalError || internalError;
 
-    useEffect(() => {
+  const colors = {
+    cardBg: '#f8fff8',
+    cardBorder: '#27ae60',
+    headerText: '#2d5a3d',
+    bodyText: '#555555',
+    accentBg: '#e8f5e8',
+    grayPanelsBg: '#f5f5f5',
+    grayPanelText: '#333'
+  };
+
+  useEffect(() => {
     if (isOpen) {
       if (mode === 'edit' && initialContractor) {
         setContractor(initialContractor);
@@ -206,7 +210,8 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
       padding: '20px'
     }}>
       <div style={{
-        backgroundColor: 'white',
+        backgroundColor: colors.accentBg,
+        color: colors.headerText,
         borderRadius: '8px',
         padding: '30px',
         maxWidth: '600px',
@@ -250,6 +255,9 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
                 padding: '10px',
                 border: '1px solid #ddd',
                 borderRadius: '4px',
+                borderColor: colors.cardBorder,
+                backgroundColor: colors.cardBg,
+                color: colors.bodyText,
                 fontSize: '14px',
                 boxSizing: 'border-box'
               }}
@@ -269,8 +277,11 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
               style={{
                 width: '100%',
                 padding: '10px',
-                border: '1px solid #ddd',
+                border: '1px solid',
                 borderRadius: '4px',
+                borderColor: colors.cardBorder,
+                backgroundColor: colors.cardBg,
+                color: colors.bodyText,
                 fontSize: '14px',
                 boxSizing: 'border-box',
                 resize: 'vertical'
@@ -289,11 +300,13 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
 
             {contractor.additionalData.map((field, index) => (
               <div key={index} style={{
-                border: '1px solid #e0e0e0',
+                border: '1px solid',
                 borderRadius: '4px',
                 padding: '15px',
                 marginBottom: '10px',
-                backgroundColor: '#f9f9f9'
+                borderColor: colors.cardBorder,
+                backgroundColor: colors.cardBg,
+                color: colors.bodyText,
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Field {index + 1}</span>

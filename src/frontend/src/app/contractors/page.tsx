@@ -6,10 +6,10 @@ import { GetContractorDTO } from '@/types/DTOs/get_contractor';
 import AddUpdateContractorPopup from '@/components/ui/popups/add_contractor_popup';
 import { AddNewContractorDTO } from '@/types/DTOs/new_contractor';
 import { AdditionalDataDTO } from '@/types/DTOs/new_additional_data';
-import { GetAdditionalDataDTO } from '@/types/DTOs/get_additional_data';
 import { EditState } from '../../components/ui/popups/edit_state'
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
 const ContractorsPage: React.FC = () => {
   const [contractors, setContractors] = useState<GetContractorDTO[]>([]);
   const [loading, setLoading] = useState(false);
@@ -17,9 +17,6 @@ const ContractorsPage: React.FC = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [editedContractor, setEditedContractor] = useState<AddNewContractorDTO|null>(null)
-  const [editedContractorId, setEditedContractorId] = useState<number|null>(null);
 
   const [editState, setEditState] = useState<EditState>({
     mode: 'closed',
@@ -28,6 +25,16 @@ const ContractorsPage: React.FC = () => {
     loading: false,
     error: null
   });
+
+  const colors = {
+    cardBg: '#f8fff8',
+    cardBorder: '#27ae60',
+    headerText: '#2d5a3d',
+    bodyText: '#555555',
+    accentBg: '#e8f5e8',
+    grayPanelsBg: '#f5f5f5',
+    grayPanelText: '#333'
+  };
 
   const transformContractorForEdit = (contractor: GetContractorDTO): AddNewContractorDTO => {
     return {
@@ -88,6 +95,11 @@ const ContractorsPage: React.FC = () => {
     }));
   }, []);
 
+  const handleContractorDelete = useCallback(async (contractor: GetContractorDTO) => {
+    await deleteContractor(contractor.id);
+    await fetchContractors(page);
+  }, []);
+
   const getApiConfig = () => {
     const isEditing = editState.mode === 'edit';
     return {
@@ -120,6 +132,38 @@ const ContractorsPage: React.FC = () => {
       });
   }
 
+  const deleteContractor = async (contractorId:number) => {
+try {      
+      const response = await fetch(`${apiUrl}/api/contractors/${contractorId.toString()}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'UserId': '1'
+        },
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result: Result<any> = await response.json();
+
+      if (!result.isSuccess) {
+        throw new Error(result.errorMessage || 'API returned failure');
+      }
+      
+      if (!result.value) {
+        throw new Error('No data received from API');
+      }
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete a contractor.');
+      console.error('Error deleting contractor:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchContractors = async (queryPage:number) => {
     setLoading(true);
     setError(null);
@@ -131,9 +175,7 @@ const ContractorsPage: React.FC = () => {
         orderByAsc: 'true'
       });
       
-      // Replace with your actual API endpoint
       const response = await fetch(`${apiUrl}/api/contractors?${params.toString()}`, {
-      //const response = await fetch(`http://localhost:7140/api/contractors?${params.toString()}`, {
         headers: {
           'Content-Type': 'application/json',
           'userId': '1'
@@ -145,24 +187,6 @@ const ContractorsPage: React.FC = () => {
       }
       
       const result: Result<PaginatedData<GetContractorDTO>> = await response.json();
-      
-      //result.value?.data?.forEach((contractor, index) => {
-      //  console.log(`Contractor ${index + 1}:`);
-      //  console.log(`  ID: ${contractor.id}`);
-      //  console.log(`  Name: ${contractor.name}`);
-      //  console.log(`  Description: ${contractor.description}`);
-      //  console.log(`  User ID: ${contractor.userId}`);
-      //  
-      //  if (contractor.additionalData && contractor.additionalData.length > 0) {
-      //    console.log(`  Additional Data:`);
-      //    contractor.additionalData.forEach((data, dataIndex) => {
-      //      console.log(`    ${dataIndex + 1}. Field: ${data.fieldName}, Type: ${data.fieldType}, Value: ${data.fieldValue}`);
-      //    });
-      //  } else {
-      //    console.log(`  Additional Data: None`);
-      //  }
-      //  console.log('---');
-      //});
       
       if (!result.isSuccess) {
         throw new Error(result.errorMessage || 'API returned failure');
@@ -183,7 +207,6 @@ const ContractorsPage: React.FC = () => {
   };
 
   const loadSampleData = () => {
-    // Sample data for testing
     const sampleContractors: GetContractorDTO[] = [
       {
         id: 1,
@@ -228,40 +251,47 @@ const ContractorsPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h1>Contractors</h1>
+    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: colors.accentBg, color: colors.headerText }}>
       
-      <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        <Button onClick={() => fetchContractors(1)} loading={loading} disabled={loading}>
-          Load Contractors from API
-        </Button>
-        
-        <Button onClick={loadSampleData} variant="default">
-          Load Sample Data
-        </Button>
-        
-        <Button onClick={clearContractors} variant="default">
-          Clear List
-        </Button>
+      <div style={{margin: 'auto', width: '70%', textAlign: 'center'}}>
+        <div style={{margin: 'auto', width: '50%'}}>
+          <h1>Contractors</h1>
+        </div>
+        <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center'}}>
+          <Button onClick={() => window.history.back()}>
+          ←
+          </Button>
+          <Button onClick={() => fetchContractors(1)} loading={loading} disabled={loading}>
+            Load Contractors from API
+          </Button>
+          
+          <Button onClick={loadSampleData} variant="default">
+            Load Sample Data
+          </Button>
+          
+          <Button onClick={clearContractors} variant="default">
+            Clear List
+          </Button>
 
-        <Button onClick={openCreatePopup } variant="default">
-          Add new contractor. 
-        </Button>
+          <Button onClick={openCreatePopup } variant="default">
+            Add new contractor. 
+          </Button>
 
-        <Button onClick={getReport} variant="default"> 
-          Get contractors report.
-        </Button>
+          <Button onClick={getReport} variant="default"> 
+            Get contractors report.
+          </Button>
+        </div>
       </div>
       {contractors.length > 0 
-      && (<div style={{ marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+      && (<div style={{ marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap', backgroundColor: colors.accentBg, border: '1px', borderColor: colors.cardBorder }}>
         <Button disabled={page < 2} onClick={() => updatePage(page - 1)}> Previous page </Button>
         <span style={{ 
               padding: '8px 16px',
-              backgroundColor: '#f5f5f5',
+              backgroundColor: colors.grayPanelsBg,
               borderRadius: '4px',
               fontSize: '14px',
               fontWeight: 'bold',
-              color: '#333'
+              color: colors.grayPanelText
             }}>
               Page {page} of {totalPages}
             </span>
@@ -293,10 +323,12 @@ const ContractorsPage: React.FC = () => {
       )}
 
       {contractors.length === 0 && !loading && !error && (
+        <div style={{textAlign: 'center'}}>
         <p>No contractors loaded. Click a button above to load contractors.</p>
+        </div>
       )}
 
-      <div>
+      <div style={{backgroundColor: colors.cardBg}}>
         {contractors.map(contractor => (
           <div 
             key={contractor.id}
@@ -316,12 +348,11 @@ const ContractorsPage: React.FC = () => {
                   {contractor.description}
                 </div>
               )}
-            <Button onClick={() => openEditPopup(contractor)} size='small'>Edit contractor</Button>
             </div>
             
             {contractor.additionalData && contractor.additionalData.length > 0 && (
-              <div style={{ marginTop: '10px' }}>
-                <h4 style={{ margin: '10px 0 5px 0', fontSize: '14px' }}>
+              <div style={{ marginTop: '10px'}}>
+                <h4 style={{ margin: '0 0 5px 0', fontSize: '14px' }}>
                   Additional Information:
                 </h4>
                 {contractor.additionalData.map((data, index) => (
@@ -329,7 +360,7 @@ const ContractorsPage: React.FC = () => {
                     key={index}
                     style={{ 
                       margin: '3px 0', 
-                      paddingLeft: '10px' 
+                      //paddingLeft: '10px' 
                     }}>
                     <span style={{ fontWeight: 'bold' }}>{data.fieldName}:</span>{' '}
                     {data.fieldValue}{' '}
@@ -340,6 +371,10 @@ const ContractorsPage: React.FC = () => {
                 ))}
               </div>
             )}
+            <div style={{gap: '10px', display: 'flex'}}>
+              <Button onClick={() => openEditPopup(contractor)} size='small'>Edit contractor</Button>
+              <Button onClick={() => handleContractorDelete(contractor)} size='small'> <i className="bi bi-trash3"></i> </Button>
+            </div>
           </div>
         ))}
       </div>
