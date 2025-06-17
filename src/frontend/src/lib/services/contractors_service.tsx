@@ -1,7 +1,7 @@
 import { GetContractorDTO } from "@/types/DTOs/get_contractor";
 import { AddNewContractorDTO } from "@/types/DTOs/new_contractor";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:5070/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5070/api';
 
 const contractorsService = {
   async getAll(page:number, count:number, orderByAsc:boolean) {

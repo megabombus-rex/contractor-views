@@ -55,7 +55,7 @@ namespace ContractorsAPI.Reports.ContractorsReport
         {
             container
                 .PaddingVertical(40)
-                .Height(750)
+                .Height(500)
                 .Background(Colors.Grey.Lighten3)
                 .AlignCenter()
                 .Padding(20)
