@@ -6,9 +6,10 @@ import { GetContractorDTO } from '@/types/DTOs/get_contractor';
 import AddUpdateContractorPopup from '@/components/ui/popups/add_contractor_popup';
 import { AddNewContractorDTO } from '@/types/DTOs/new_contractor';
 import { AdditionalDataDTO } from '@/types/DTOs/new_additional_data';
-import { EditState } from '../../components/ui/popups/edit_state'
-import contractorsService from '../../lib/services/contractors_service'
-import reportsService from '../../lib/services/reports_service'
+import { EditState } from '../../types/edit_state';
+import contractorsService from '../../lib/services/contractors_service';
+import reportsService from '../../lib/services/reports_service';
+import styles from './contractors_page.module.css';
 
 const ContractorsPage: React.FC = () => {
   const [contractors, setContractors] = useState<GetContractorDTO[]>([]);
@@ -25,16 +26,6 @@ const ContractorsPage: React.FC = () => {
     loading: false,
     error: null
   });
-
-  const colors = {
-    cardBg: '#f8fff8',
-    cardBorder: '#27ae60',
-    headerText: '#2d5a3d',
-    bodyText: '#555555',
-    accentBg: '#e8f5e8',
-    grayPanelsBg: '#f5f5f5',
-    grayPanelText: '#333'
-  };
 
   const transformContractorForEdit = (contractor: GetContractorDTO): AddNewContractorDTO => {
     return {
@@ -166,13 +157,13 @@ const ContractorsPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: colors.accentBg, color: colors.headerText }}>
+    <div className={styles.container}>
       
-      <div style={{margin: 'auto', width: '70%', textAlign: 'center'}}>
-        <div style={{margin: 'auto', width: '50%'}}>
+      <div className={styles.mainContent}>
+        <div className={styles.headerSection}>
           <h1>Contractors</h1>
         </div>
-        <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center'}}>
+        <div className={styles.buttonGroup}>
           <Button onClick={() => window.history.back()}>
           ←
           </Button>
@@ -197,21 +188,14 @@ const ContractorsPage: React.FC = () => {
           </Button>
         </div>
       </div>
-      {contractors.length > 0 
-      && (<div style={{ marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap', backgroundColor: colors.accentBg, border: '1px', borderColor: colors.cardBorder }}>
-        <Button disabled={page < 2} onClick={() => updatePage(page - 1)}> Previous page </Button>
-        <span style={{ 
-              padding: '8px 16px',
-              backgroundColor: colors.grayPanelsBg,
-              borderRadius: '4px',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              color: colors.grayPanelText
-            }}>
+      {contractors.length > 0 && (
+        <div className={styles.paginationContainer}>
+          <Button disabled={page < 2} onClick={() => updatePage(page - 1)}> Previous page </Button>
+            <span className={styles.pageInfo}>
               Page {page} of {totalPages}
             </span>
-        <Button disabled={page >= totalPages} onClick={() => updatePage(page + 1)}> Next page </Button>
-      </div>)}
+          <Button disabled={page >= totalPages} onClick={() => updatePage(page + 1)}> Next page </Button>
+        </div>)}
       <AddUpdateContractorPopup 
         mode={editState.mode}
         isOpen={showPopup} 
@@ -225,67 +209,50 @@ const ContractorsPage: React.FC = () => {
         userId={1}
       />
       {error && (
-        <div style={{ 
-          color: '#d32f2f', 
-          backgroundColor: '#ffebee', 
-          padding: '10px', 
-          borderRadius: '4px',
-          marginBottom: '20px'
-        }}>
+        <div className={styles.errorMessage}>
           Error: {error}
         </div>
       )}
 
       {contractors.length === 0 && !loading && !error && (
-        <div style={{textAlign: 'center'}}>
+        <div className={styles.emptyState}>
         <p>No contractors loaded. Click a button above to load contractors.</p>
         </div>
       )}
 
-      <div style={{backgroundColor: colors.cardBg}}>
+      <div className={styles.contractorsList}>
         {contractors.map(contractor => (
-          <div 
-            key={contractor.id}
-            style={{
-              border: '1px solid #ddd',
-              marginBottom: '20px',
-              padding: '15px',
-              borderRadius: '4px'
-            }}
-          >
-            <div style={{ marginBottom: '10px' }}>
-              <div style={{ fontWeight: 'bold', fontSize: '18px', marginBottom: '5px' }}>
+          <div key={contractor.id} className={styles.contractorCard}>
+            <div className={styles.contractorHeader}>
+              <div className={styles.contractorName}>
                 {contractor.name}
               </div>
               {contractor.description && (
-                <div style={{ color: '#666', marginBottom: '5px' }}>
+                <div className={styles.contractorDescription}>
                   {contractor.description}
                 </div>
               )}
             </div>
             
             {contractor.additionalData && contractor.additionalData.length > 0 && (
-              <div style={{ marginTop: '10px'}}>
-                <h4 style={{ margin: '0 0 5px 0', fontSize: '14px' }}>
+              <div className={styles.additionalDataSection}>
+                <h4 className={styles.additionalDataTitle}>
                   Additional Information:
                 </h4>
                 {contractor.additionalData.map((data, index) => (
-                  <div 
-                    key={index}
-                    style={{ 
-                      margin: '3px 0', 
-                      //paddingLeft: '10px' 
-                    }}>
-                    <span style={{ fontWeight: 'bold' }}>{data.fieldName}:</span>{' '}
+                  <div key={index} className={styles.additionalDataItem}>
+                    <span className={styles.fieldName}>
+                      {data.fieldName}:
+                    </span>{' '}
                     {data.fieldValue}{' '}
-                    <span style={{ color: '#888', fontSize: '12px' }}>
+                    <span className={styles.fieldType}>
                       ({data.fieldType})
                     </span>
                   </div>
                 ))}
               </div>
             )}
-            <div style={{gap: '10px', display: 'flex'}}>
+            <div className={styles.contractorActions}>
               <Button onClick={() => openEditPopup(contractor)} size='small'>Edit contractor</Button>
               <Button onClick={() => handleContractorDelete(contractor, page)} size='small'> <i className="bi bi-trash3"></i> </Button>
             </div>

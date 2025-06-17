@@ -7,6 +7,7 @@ import { AddNewContractorDTO } from '@/types/DTOs/new_contractor';
 import "bootstrap-icons/font/bootstrap-icons.css";
 import '../../../types/result'
 import contractorsService from '@/lib/services/contractors_service';
+import styles from './add_contractor_popup.module.css';
 
 interface AddContractorPopupProps {
   mode: 'create' | 'edit' | 'closed';
@@ -45,16 +46,6 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
   const loading = externalLoading || internalLoading;
   const error = externalError || internalError;
 
-  const colors = {
-    cardBg: '#f8fff8',
-    cardBorder: '#27ae60',
-    headerText: '#2d5a3d',
-    bodyText: '#555555',
-    accentBg: '#e8f5e8',
-    grayPanelsBg: '#f5f5f5',
-    grayPanelText: '#333'
-  };
-
   useEffect(() => {
     if (isOpen) {
       if (mode === 'edit' && initialContractor) {
@@ -63,7 +54,6 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
         resetForm();
       }
       setInternalError(null);
-      console.log(mode)
     }
   }, [isOpen, mode, initialContractor, userId]);
 
@@ -75,13 +65,6 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
         { fieldName: '', fieldType: 'string', fieldValue: '' } as AdditionalDataDTO
       ]
     }));
-
-    contractor.additionalData.forEach((additionalData, index) => {
-        console.log(`Contractor ${index + 1}:`);
-        console.log(`  Field Name: ${additionalData.fieldName}`);
-        console.log(`  Field Type: ${additionalData.fieldType}`);
-        console.log(`  Field Value: ${additionalData.fieldValue}`);
-      });
   };
 
   const removeAdditionalData = (index: number) => {
@@ -134,8 +117,6 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
           ? await contractorsService.create(contractor) 
           : await contractorsService.update(initialContractorId!, contractor);
         
-        console.log(`Mode: ${mode}`);
-
         if (mode === 'create') {
           // Creating a contractor returns his Id (int)
           const result: Result<number> = await response;
@@ -180,53 +161,24 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
   const submitButtonText = isEditing ? 'Update Contractor' : 'Create Contractor';
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      padding: '20px'
-    }}>
-      <div style={{
-        backgroundColor: colors.accentBg,
-        color: colors.headerText,
-        borderRadius: '8px',
-        padding: '30px',
-        maxWidth: '600px',
-        width: '100%',
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, fontSize: '24px' }}> {title}</h2>
+    <div className={styles.overlay}>
+      <div className={styles.modal}>
+        <div className={styles.header}>
+          <h2 className={styles.title}>{title}</h2>
           <Button onClick={handleClose} size='small' disabled={false}> 
             x 
           </Button>
         </div>
 
         {error && (
-          <div style={{
-            color: '#d32f2f',
-            backgroundColor: '#ffebee',
-            padding: '12px',
-            borderRadius: '4px',
-            marginBottom: '20px',
-            fontSize: '14px'
-          }}>
+          <div className={styles.errorMessage}>
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+          <div className={styles.formGroup}>
+            <label className={styles.label}>
               Name *
             </label>
             <input
@@ -234,23 +186,13 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
               value={contractor.name}
               onChange={(e) => setContractor(prev => ({ ...prev, name: e.target.value }))}
               disabled={loading}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                borderColor: colors.cardBorder,
-                backgroundColor: colors.cardBg,
-                color: colors.bodyText,
-                fontSize: '14px',
-                boxSizing: 'border-box'
-              }}
+              className={styles.input}
               placeholder="Enter contractor name"
             />
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+          <div className={styles.formGroup}>
+            <label className={styles.label}>
               Description
             </label>
             <textarea
@@ -258,50 +200,31 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
               onChange={(e) => setContractor(prev => ({ ...prev, description: e.target.value }))}
               disabled={loading}
               rows={3}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid',
-                borderRadius: '4px',
-                borderColor: colors.cardBorder,
-                backgroundColor: colors.cardBg,
-                color: colors.bodyText,
-                fontSize: '14px',
-                boxSizing: 'border-box',
-                resize: 'vertical'
-              }}
+              className={styles.textarea}
               placeholder="Enter contractor description"
             />
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <label style={{ fontWeight: 'bold' }}>Additional Fields</label>
+          <div className={styles.formGroup}>
+            <div className={styles.additionalFieldsHeader}>
+              <label className={styles.label}>Additional Fields</label>
               <Button type="button" onClick={addAdditionalData} disabled={loading} size="small">
                 +
               </Button>
             </div>
 
             {contractor.additionalData.map((field, index) => (
-              <div key={index} style={{
-                border: '1px solid',
-                borderRadius: '4px',
-                padding: '15px',
-                marginBottom: '10px',
-                borderColor: colors.cardBorder,
-                backgroundColor: colors.cardBg,
-                color: colors.bodyText,
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Field {index + 1}</span>
+              <div key={index} className={styles.fieldCard}>
+                <div className={styles.fieldHeader}>
+                  <span className={styles.fieldTitle}>Field {index + 1}</span>
                   <Button type="button" onClick={() => removeAdditionalData(index)} disabled={loading} size="small">
                     X
                   </Button>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                <div className={styles.fieldGrid}>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: 'bold' }}>
+                    <label className={styles.smallLabel}>
                       Field Name
                     </label>
                     <input
@@ -309,34 +232,20 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
                       value={field.fieldName}
                       onChange={(e) => updateAdditionalData(index, 'fieldName', e.target.value)}
                       disabled={loading}
-                      style={{
-                        width: '100%',
-                        padding: '8px',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        boxSizing: 'border-box'
-                      }}
+                      className={styles.smallInput}
                       placeholder="e.g., Phone, License"
                     />
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: 'bold' }}>
+                    <label className={styles.smallLabel}>
                       Field Type
                     </label>
                     <select
                       value={field.fieldType}
                       onChange={(e) => updateAdditionalData(index, 'fieldType', e.target.value)}
                       disabled={loading}
-                      style={{
-                        width: '100%',
-                        padding: '8px',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        boxSizing: 'border-box'
-                      }}
+                      className={styles.select}
                     >
                       <option value="string">Text (string)</option>
                       <option value="int">Number (int)</option>
@@ -348,7 +257,7 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: 'bold' }}>
+                  <label className={styles.smallLabel}>
                     Field Value
                   </label>
                   <input
@@ -356,14 +265,7 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
                     value={field.fieldValue}
                     onChange={(e) => updateAdditionalData(index, 'fieldValue', e.target.value)}
                     disabled={loading}
-                    style={{
-                      width: '100%',
-                      padding: '8px',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      boxSizing: 'border-box'
-                    }}
+                    className={styles.smallInput}
                     placeholder="Enter field value"
                   />
                 </div>
@@ -371,14 +273,13 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
             ))}
 
             {contractor.additionalData.length === 0 && (
-              <p style={{ color: '#666', fontSize: '14px', fontStyle: 'italic' }}>
+              <p className={styles.emptyFieldsMessage}>
                 No additional fields added. Click "Add Field" to add custom data.
               </p>
             )}
           </div>
 
-          {/* Form Actions */}
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          <div className={styles.formActions}>
             <Button type="button" onClick={handleClose} disabled={loading}>
               Cancel
             </Button>

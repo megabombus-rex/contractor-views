@@ -60,22 +60,6 @@
   color: transparent;
 }
 
-.spinner {
-  position: absolute;
-  width: 1rem;
-  height: 1rem;
-  border: 2px solid transparent;
-  border-top: 2px solid currentColor;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
 .hiddenText {
   visibility: hidden;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }

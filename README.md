@@ -19,6 +19,7 @@ API_PORT=7140
 ### Frontend
 FE_PORT=5000
 
+Database is seeded by the WebAPI for simplicity.
 To build the frontend with the intended configuration env.production in src/frontend has to be filled with:
 
 NEXT_PUBLIC_API_URL=http://localhost:7140/api - if it was supposed to be ran locally, or any other host if not.

@@ -19,7 +19,7 @@ export const Button: React.FC<ButtonProps> = ({
   disabled = false,
   loading = false,
   type = 'button',
-  onClick,
+  onClick, 
   className = '',
 }) => {
   const buttonClasses = [
