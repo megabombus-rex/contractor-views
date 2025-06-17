@@ -48,9 +48,17 @@ namespace ContractorsAPI.Services
 
             var data = new ContractorsReportData(new GetUserDTO(userId, user.UserName, user.EmailAddress), contractors, DateTime.UtcNow);
 
-            var document = new ContractorsReportDocument(data);
+            try
+            {
+                var document = new ContractorsReportDocument(data);
+                return Result<byte[]>.Success(document.GeneratePdf());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Exception while creating the report: {ex.Message}", ex);
+                return Result<byte[]>.Failure("Exception while creating the report.", StatusCodes.Status500InternalServerError);
+            }
 
-            return Result<byte[]>.Success(document.GeneratePdf());
         }
     }
 }

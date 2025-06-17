@@ -41,11 +41,12 @@ const contractorsService = {
       throw err;
     }
     const response = await fetch(`${API_BASE_URL}/contractors/${id}`);
-    if (!response.ok) throw new Error('Failed to fetch contractor');
+    //if (!response.ok) throw new Error('Failed to fetch contractor');
     return response.json();
   },
 
   async create(contractor:AddNewContractorDTO) {
+    console.log('Creating contractor in contractors service.');
     const response = await fetch(`${API_BASE_URL}/contractors`, {
       method: 'POST',
       headers: {
@@ -53,12 +54,12 @@ const contractorsService = {
       },
       body: JSON.stringify(contractor),
     });
-    if (!response.ok) throw new Error('Failed to create contractor');
-    return await response.json(); 
+    //if (!response.ok) throw new Error('Failed to create contractor');
+    return response.json(); 
   },
 
   async update(id:number, contractor:AddNewContractorDTO) {
-    const response = await fetch(`${API_BASE_URL}/contractors/${id}`, {
+    const response: Response = await fetch(`${API_BASE_URL}/contractors/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -66,7 +67,6 @@ const contractorsService = {
       },
       body: JSON.stringify(contractor),
     });
-    if (!response.ok) throw new Error('Failed to update contractor');
     return response.json();
   },
 
@@ -80,9 +80,9 @@ const contractorsService = {
         method: 'DELETE'
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      //if (!response.ok) {
+      //  throw new Error(`HTTP error! status: ${response.status}`);
+      //}
       
       return response.json();
     } catch (err) {

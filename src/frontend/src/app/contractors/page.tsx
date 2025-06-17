@@ -106,7 +106,17 @@ const ContractorsPage: React.FC = () => {
   }
 
   const getReport = async () => {
-    await reportsService.getReport();
+    try {
+    const response = await reportsService.getReport();
+    
+    if (response) {
+      console.error('Error getting report:', response);
+      
+      setError(response.errorMessage || 'Failed to generate report');
+    }    
+    } catch (err) {
+      setError('Failed to generate report');
+    }
   }
 
   const deleteContractor = async (contractorId:number) => {
@@ -148,7 +158,6 @@ const ContractorsPage: React.FC = () => {
 
   const loadSampleData = async () => {
     const sampleContractors: GetContractorDTO[] = await contractorsService.loadSampleData();
-    
     setContractors(sampleContractors);
   };
 

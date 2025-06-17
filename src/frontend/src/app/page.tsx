@@ -21,10 +21,6 @@ const App: React.FC = () => {
     router.push('/contractors');
   };
 
-  const navigateToHome = () => {
-    router.push('/');
-  };
-
   return (
     <div style={{ 
       padding: '40px', 

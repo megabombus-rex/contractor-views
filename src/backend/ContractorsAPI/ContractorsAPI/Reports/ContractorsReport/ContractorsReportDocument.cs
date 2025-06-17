@@ -48,8 +48,6 @@ namespace ContractorsAPI.Reports.ContractorsReport
                         text.Span($"{_data.User.UserName}");
                     });
                 });
-
-                row.ConstantItem(100).Height(50).Placeholder();
             });
         }
 
@@ -57,7 +55,7 @@ namespace ContractorsAPI.Reports.ContractorsReport
         {
             container
                 .PaddingVertical(40)
-                .Height(250)
+                .Height(750)
                 .Background(Colors.Grey.Lighten3)
                 .AlignCenter()
                 .Padding(20)

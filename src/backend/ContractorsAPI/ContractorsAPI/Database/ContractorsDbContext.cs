@@ -26,6 +26,17 @@ namespace ContractorsAPI.Database
             modelBuilder.Entity<User>()
                 .HasKey(x => x.Id);
 
+            modelBuilder.Entity<User>(b =>
+            {
+                b.HasData(new User()
+                {
+                    Id = 1,
+                    EmailAddress = "jan@example.com",
+                    UserName = "Jan Tran CEO",
+                    PasswordHash = "Not hashed."
+                });
+            });
+
             modelBuilder.Entity<User>()
                 .HasMany(e => e.Contractors)
                 .WithOne(c => c.User)

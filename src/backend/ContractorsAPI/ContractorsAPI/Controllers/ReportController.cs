@@ -33,6 +33,7 @@ namespace ContractorsAPI.Controllers
             {
                 switch (document.ErrorCode)
                 {
+                    // it should be null with correct response error
                     case (StatusCodes.Status404NotFound):
                         return NotFound(document);
                     default:

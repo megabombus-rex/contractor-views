@@ -129,38 +129,39 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
           throw new Error('All additional field values must be provided');
         }
       }
-
-      const contractorData = {
-        name: contractor.name.trim(),
-        description: contractor.description.trim(),
-        userId: userId,
-        additionalData: contractor.additionalData.map(field => ({
-          fieldName: field.fieldName.trim(),
-          fieldType: field.fieldType,
-          fieldValue: field.fieldValue.trim()
-        }))
-      };
-
+      
       try {
+        console.log('Trying to add or update.');
         const response: Result<any> = mode === 'create' 
           ? await contractorsService.create(contractor) 
           : await contractorsService.update(initialContractorId!, contractor);
+        
+        console.log(`Mode: ${mode}`);
 
         if (mode === 'create') {
           // Creating a contractor returns his Id (int)
+          console.log(`Result fetching add.`)
           const result: Result<number> = await response;
+          console.log(`Result got: ${result.errorCode}.`)
           if (!result.isSuccess) {
+            console.log(`Message from add result: ${result.errorMessage}`)
             throw new Error(result.errorMessage || 'Failed to create contractor.');
           }
         } else {
           // Updating might return different response format
+          console.log(`Result fetching update.`)
           const result: Result<any> = await response;
           if (!result.isSuccess) {
+            console.log(`Message from put result: ${result.errorMessage}`)
             throw new Error(result.errorMessage || 'Failed to update contractor.');
           }
         }
       } catch (err) {
-        throw err;
+        const errorTemp: Error = err as Error;
+        
+        console.log(`Error message: ${errorTemp.message}`)
+
+        throw err as Error;
       }
       
 
