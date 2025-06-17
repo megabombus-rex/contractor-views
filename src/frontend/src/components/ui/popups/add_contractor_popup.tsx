@@ -75,7 +75,6 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
         { fieldName: '', fieldType: 'string', fieldValue: '' } as AdditionalDataDTO
       ]
     }));
-    console.log("Adding additional field.")
 
     contractor.additionalData.forEach((additionalData, index) => {
         console.log(`Contractor ${index + 1}:`);
@@ -131,7 +130,6 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
       }
       
       try {
-        console.log('Trying to add or update.');
         const response: Result<any> = mode === 'create' 
           ? await contractorsService.create(contractor) 
           : await contractorsService.update(initialContractorId!, contractor);
@@ -140,35 +138,24 @@ const AddUpdateContractorPopup: React.FC<AddContractorPopupProps> = ({
 
         if (mode === 'create') {
           // Creating a contractor returns his Id (int)
-          console.log(`Result fetching add.`)
           const result: Result<number> = await response;
-          console.log(`Result got: ${result.errorCode}.`)
           if (!result.isSuccess) {
-            console.log(`Message from add result: ${result.errorMessage}`)
             throw new Error(result.errorMessage || 'Failed to create contractor.');
           }
         } else {
-          // Updating might return different response format
-          console.log(`Result fetching update.`)
           const result: Result<any> = await response;
           if (!result.isSuccess) {
-            console.log(`Message from put result: ${result.errorMessage}`)
             throw new Error(result.errorMessage || 'Failed to update contractor.');
           }
         }
       } catch (err) {
-        const errorTemp: Error = err as Error;
-        
-        console.log(`Error message: ${errorTemp.message}`)
-
-        throw err as Error;
+        throw err;
       }
       
 
       resetForm();
       onClose();
       if (onContractorAdded) {
-        console.log('ADDED');
         onContractorAdded();
       }
     } catch (err) {

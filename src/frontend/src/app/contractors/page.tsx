@@ -110,8 +110,7 @@ const ContractorsPage: React.FC = () => {
     const response = await reportsService.getReport();
     
     if (response) {
-      console.error('Error getting report:', response);
-      
+      console.error('Error getting report:', response);      
       setError(response.errorMessage || 'Failed to generate report');
     }    
     } catch (err) {
